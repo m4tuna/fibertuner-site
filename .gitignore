@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.netlify/
+
+# Release binaries are served from GitHub Releases, not committed to git
+public/releases/**/*.dmg
+public/releases/**/*.exe
+public/releases/**/*.AppImage
