@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 .netlify/
+.DS_Store
 
 # Release binaries are served from GitHub Releases, not committed to git
 public/releases/**/*.dmg

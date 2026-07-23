@@ -54,6 +54,68 @@ const FEATURES: { title: string; desc: string; mac: boolean; ios: boolean }[] = 
   },
 ]
 
+function PricingCard({
+  name, price, period, badge, features, cta, url, accent, highlighted,
+}: {
+  name: string; price: string; period: string; badge?: string
+  features: string[]; cta: string; url: string; accent: string; highlighted: boolean
+}) {
+  return (
+    <div style={{
+      padding: 24, borderRadius: 14,
+      background: highlighted
+        ? `color-mix(in srgb, ${accent} 5%, rgba(255,255,255,0.04))`
+        : 'rgba(255,255,255,0.04)',
+      border: `1px solid ${highlighted ? `color-mix(in srgb, ${accent} 35%, transparent)` : 'rgba(255,255,255,0.08)'}`,
+      boxShadow: highlighted ? `0 0 40px color-mix(in srgb, ${accent} 12%, transparent)` : 'none',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>{name}</span>
+        {badge && (
+          <span style={{
+            fontSize: 10, fontWeight: 600, letterSpacing: '0.04em',
+            padding: '3px 8px', borderRadius: 20,
+            background: `color-mix(in srgb, ${accent} 18%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+            color: accent,
+          }}>{badge}</span>
+        )}
+      </div>
+      <div style={{ marginBottom: 20 }}>
+        <span style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', color: 'rgba(255,255,255,0.92)' }}>{price}</span>
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginLeft: 2 }}>{period}</span>
+      </div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+        {features.map(f => (
+          <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+            <span style={{ color: accent, flexShrink: 0, marginTop: 1, fontSize: 11 }}>✓</span>
+            {f}
+          </li>
+        ))}
+      </ul>
+      <a
+        href={url + '?embed=1'}
+        className="lemonsqueezy-button"
+        style={{
+          display: 'block', width: '100%', padding: '11px 16px',
+          borderRadius: 9, border: 'none', textAlign: 'center',
+          fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          textDecoration: 'none',
+          background: highlighted ? accent : 'rgba(255,255,255,0.09)',
+          color: highlighted ? '#08080e' : 'rgba(255,255,255,0.75)',
+          transition: 'opacity 0.15s',
+          boxSizing: 'border-box',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.opacity = '0.82')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+      >
+        {cta}
+      </a>
+    </div>
+  )
+}
+
 export default function App() {
 
   return (
@@ -68,10 +130,21 @@ export default function App() {
         WebkitBackdropFilter: 'blur(20px)',
         background: 'rgba(8,8,14,0.85)',
       }}>
-        <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.02em' }}>Fibertuner</span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.2)', cursor: 'default' }}>
-          Coming soon
-        </span>
+        <span style={{
+          fontSize: 12, fontWeight: 700,
+          letterSpacing: '0.06em', textTransform: 'uppercase',
+          background: `linear-gradient(95deg, #fff 0%, color-mix(in srgb, ${ACCENT} 40%, #fff) 100%)`,
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}>Fibertuner</span>
+        <a
+          href="#pricing"
+          style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 0.15s' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,1)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
+        >
+          Pricing
+        </a>
       </header>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
@@ -81,7 +154,8 @@ export default function App() {
           background: `radial-gradient(ellipse 80% 55% at 55% -5%, color-mix(in srgb, ${ACCENT} 11%, transparent), transparent 68%)`,
         }} />
 
-        <div style={{ maxWidth: 780, margin: '0 auto', padding: '96px 40px 80px', position: 'relative' }}>
+        <div style={{ maxWidth: 780, margin: '0 auto', padding: '80px 40px 80px', position: 'relative' }}>
+          <img src="/logo.png" alt="Fibertuner" style={{ width: 72, height: 72, display: 'block', marginBottom: 32, opacity: 0.9 }} />
           <p style={{
             fontSize: 11, fontWeight: 600, letterSpacing: '0.13em',
             textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)',
@@ -107,24 +181,34 @@ export default function App() {
             AI-powered features, and enough customization to make it feel like yours.
           </p>
 
-          {/* Primary download CTA */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-            <button
-              disabled
+          {/* Primary CTA */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14 }}>
+            <a
+              href="#pricing"
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 10,
-                padding: '13px 26px',
-                background: 'rgba(255,255,255,0.07)',
-                border: 'none', borderRadius: 10,
-                color: 'rgba(255,255,255,0.3)', fontWeight: 600, fontSize: 15,
-                letterSpacing: '-0.01em',
-                cursor: 'default',
-                fontFamily: 'inherit',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '12px 28px',
+                background: ACCENT, borderRadius: 10, border: 'none',
+                color: '#08080e', fontWeight: 600, fontSize: 14,
+                letterSpacing: '-0.01em', textDecoration: 'none',
+                fontFamily: 'inherit', transition: 'opacity 0.15s',
               }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.82')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
             >
-              Coming soon
-            </button>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>Mac · Windows · Linux</span>
+              Buy
+            </a>
+            <a
+              href="/downloads"
+              style={{
+                fontSize: 13, color: 'rgba(255,255,255,0.38)',
+                textDecoration: 'none', transition: 'color 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.38)')}
+            >
+              Already have a license? Download →
+            </a>
           </div>
         </div>
       </div>
@@ -252,6 +336,97 @@ export default function App() {
           />
         </div>
       </div>}
+
+      {/* ── Pricing ──────────────────────────────────────────────────── */}
+      <div id="pricing" style={{ position: 'relative', maxWidth: 780, margin: '0 auto', padding: '104px 40px 0' }}>
+        <div style={{
+          position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+          width: '140%', height: 480, pointerEvents: 'none',
+          background: `radial-gradient(ellipse 70% 50% at 50% 0%, color-mix(in srgb, ${ACCENT} 8%, transparent), transparent 70%)`,
+        }} />
+        <div style={{ position: 'relative' }}>
+          <h2 style={{
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
+            marginBottom: 8,
+          }}>Pricing</h2>
+          <p style={{
+            fontSize: 24, fontWeight: 600, letterSpacing: '-0.5px',
+            lineHeight: 1.2, marginBottom: 6, color: 'rgba(255,255,255,0.9)',
+          }}>
+            One app. Two ways to own it.
+          </p>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, marginBottom: 48, maxWidth: 440 }}>
+            Personal plans cover you on up to 3 machines. Server plans unlock Fibertuner for every user on your Plex server.
+          </p>
+
+          {/* Personal tier */}
+          <div style={{ marginBottom: 40 }}>
+            <div style={{ marginBottom: 14 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>Personal</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginLeft: 12 }}>For individuals with Plex access. Works on any server you can log into. Up to 3 machines.</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <PricingCard
+                name="Annual"
+                price="$12"
+                period="/yr"
+                features={['Any Plex server you have access to', 'Up to 3 machines', 'All features included']}
+                cta="Get Annual — $12/yr"
+                url="https://fibertuner.lemonsqueezy.com/checkout/buy/fdfac193-01f0-475e-947a-8ed165ef520e"
+                accent={ACCENT}
+                highlighted={false}
+              />
+              <PricingCard
+                name="Lifetime"
+                price="$29"
+                period=" one-time"
+                badge="Best value"
+                features={['Any Plex server you have access to', 'Up to 3 machines', 'All features included', 'All future updates']}
+                cta="Get Lifetime — $29"
+                url="https://fibertuner.lemonsqueezy.com/checkout/buy/e0d0ab6c-dace-4f93-9ad2-0b5b21514d08"
+                accent={ACCENT}
+                highlighted={true}
+              />
+            </div>
+          </div>
+
+          {/* Server tier */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 14 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>Server</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginLeft: 12 }}>For Plex server admins. One purchase unlocks Fibertuner for every user on your Plex server.</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <PricingCard
+                name="Annual"
+                price="$29"
+                period="/yr"
+                features={['Unlimited users on your server', 'Users just log in with Plex', 'All features included']}
+                cta="Set up Server Plan — $29/yr"
+                url="https://fibertuner.lemonsqueezy.com/checkout/buy/20137415-00d9-4779-8581-45b0223066f0"
+                accent={ACCENT}
+                highlighted={false}
+              />
+              <PricingCard
+                name="Lifetime"
+                price="$69"
+                period=" one-time"
+                badge="One-time"
+                features={['Unlimited users on your server', 'Users just log in with Plex', 'All features included', 'All future updates']}
+                cta="Get Server Lifetime — $69"
+                url="https://fibertuner.lemonsqueezy.com/checkout/buy/e0d0ab6c-dace-4f93-9ad2-0b5b21514d08"
+                accent={ACCENT}
+                highlighted={true}
+              />
+            </div>
+          </div>
+
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: 20 }}>
+            Server plans verify Plex server ownership at checkout.
+          </p>
+        </div>
+      </div>
 
       {/* ── Requirements ─────────────────────────────────────────────── */}
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '104px 40px 0' }}>

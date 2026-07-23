@@ -1,6 +1,10 @@
 {
   "version": "2.0.0",
-  "date": "2026-07-23",
-  "notes": "",
-  "platforms": {}
+  "date": "2026-07-20",
+  "notes": "AI Playlist Wizard, lyric quotes, vinyl disc animation, toast notifications, and UI polish.",
+  "platforms": {
+    "mac": "https://github.com/m4tuna/fibertuner/releases/download/v2.0.0/Fibertuner-mac.dmg",
+    "windows": "https://github.com/m4tuna/fibertuner/releases/download/v2.0.0/Fibertuner-win.exe",
+    "linux": "https://github.com/m4tuna/fibertuner/releases/download/v2.0.0/Fibertuner-linux.AppImage"
+  }
 }
