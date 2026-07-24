@@ -21,10 +21,7 @@ export default async (req: Request) => {
   const lsRes = await fetch("https://api.lemonsqueezy.com/v1/licenses/validate", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({
-      license_key: licenseKey,
-      ...(machineId ? { instance_id: machineId } : {}),
-    }),
+    body: JSON.stringify({ license_key: licenseKey }),
   })
 
   const data = await lsRes.json() as Record<string, unknown>
