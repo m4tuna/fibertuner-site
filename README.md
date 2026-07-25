@@ -1,4 +1,6 @@
-# Fibertuner Site
+<img src="public/logo.png" width="80" />
+
+# Fibertuner
 
 Marketing site and download host for [Fibertuner](https://fibertuner.com) — a Plex music controller for Mac, Windows, and Linux.
 
