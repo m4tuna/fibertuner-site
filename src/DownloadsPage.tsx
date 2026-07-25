@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import Footer from './components/Footer'
+import { useDownloadStats, fmt } from './hooks/useDownloadStats'
+import { supabase } from './lib/supabase'
 
 const ACCENT = '#a78bfa'
-const GITHUB = 'm4tuna/fibertuner'
+const GITHUB = 'm4tuna/fibertuner-site'
 
 interface Release {
   version: string
@@ -37,10 +39,23 @@ function detectPlatform(): 'mac' | 'windows' | 'linux' | null {
   return null
 }
 
+async function trackDownload(platform: string, version: string) {
+  try {
+    await supabase.from('download_clicks').insert([{
+      platform,
+      version,
+      user_agent: navigator.userAgent,
+      referrer: document.referrer || null,
+      detected_os: detectPlatform(),
+    }])
+  } catch {}
+}
+
 export default function DownloadsPage() {
   const [release, setRelease] = useState<Release | null>(null)
   const [error, setError] = useState(false)
   const detectedPlatform = detectPlatform()
+  const stats = useDownloadStats(GITHUB)
   const isSuccess = new URLSearchParams(window.location.search).has('success')
 
   useEffect(() => {
@@ -130,6 +145,16 @@ export default function DownloadsPage() {
           {release && (
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 48 }}>
               Version {release.version} · {formatDate(release.date)}
+              {stats?.latestPublishedAt && (
+                <span style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>
+                  · Built {formatTimestamp(stats.latestPublishedAt)}
+                </span>
+              )}
+              {stats && stats.totals.total > 0 && (
+                <span style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>
+                  · {fmt(stats.totals.total)} downloads
+                </span>
+              )}
             </p>
           )}
           {!release && !error && (
@@ -185,10 +210,17 @@ export default function DownloadsPage() {
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{p.sublabel}</div>
                   </div>
 
+                  {stats && stats.totals[p.key] > 0 && (
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>
+                      {fmt(stats.totals[p.key])} downloads
+                    </div>
+                  )}
+
                   {url ? (
                     <a
                       href={url}
                       download
+                      onClick={() => trackDownload(p.key, release?.version ?? 'unknown')}
                       style={{
                         display: 'block', padding: '10px 14px',
                         borderRadius: 9, textAlign: 'center',
@@ -260,6 +292,13 @@ export default function DownloadsPage() {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+function formatTimestamp(iso: string) {
+  return new Date(iso).toLocaleString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  })
 }
 
 function MacIcon() {
