@@ -34,7 +34,10 @@ export function useDownloadStats(githubRepo: string): DownloadStats | null {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await fetch(`https://api.github.com/repos/${githubRepo}/releases?per_page=100`)
+        const headers: Record<string, string> = {}
+        const ghToken = import.meta.env.VITE_GH_TOKEN
+        if (ghToken) headers['Authorization'] = `Bearer ${ghToken}`
+        const res = await fetch(`https://api.github.com/repos/${githubRepo}/releases?per_page=100`, { headers })
         if (!res.ok) return
         const releases: {
           tag_name: string
