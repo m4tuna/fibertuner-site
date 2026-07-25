@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import Footer from './components/Footer'
-import { useDownloadStats, fmt } from './hooks/useDownloadStats'
+import { useDownloadStats } from './hooks/useDownloadStats'
 import { supabase } from './lib/supabase'
+import StatsPanel from './components/StatsPanel'
 
 const ACCENT = '#a78bfa'
 const GITHUB = 'm4tuna/fibertuner-site'
@@ -56,7 +57,9 @@ export default function DownloadsPage() {
   const [error, setError] = useState(false)
   const detectedPlatform = detectPlatform()
   const stats = useDownloadStats(GITHUB)
-  const isSuccess = new URLSearchParams(window.location.search).has('success')
+  const params = new URLSearchParams(window.location.search)
+  const isSuccess = params.has('success')
+  const isAdmin = window.location.hostname === 'localhost' && params.has('stats')
 
   useEffect(() => {
     fetch('/releases/latest.json')
@@ -64,6 +67,44 @@ export default function DownloadsPage() {
       .then(setRelease)
       .catch(() => setError(true))
   }, [])
+
+  if (isAdmin) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <header style={{
+          position: 'sticky', top: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 40px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          background: 'rgba(8,8,14,0.85)',
+        }}>
+          <a href="/" style={{ textDecoration: 'none' }}>
+            <span style={{
+              fontSize: 12, fontWeight: 700,
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+              background: `linear-gradient(95deg, #fff 0%, color-mix(in srgb, ${ACCENT} 40%, #fff) 100%)`,
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>Fibertuner</span>
+          </a>
+          <a
+            href="/downloads"
+            style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,1)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
+          >
+            ← Downloads
+          </a>
+        </header>
+        <div style={{ flex: 1 }}>
+          <StatsPanel />
+        </div>
+        <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -150,11 +191,6 @@ export default function DownloadsPage() {
                   · Built {formatTimestamp(stats.latestPublishedAt)}
                 </span>
               )}
-              {stats && stats.totals.total > 0 && (
-                <span style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>
-                  · {fmt(stats.totals.total)} downloads
-                </span>
-              )}
             </p>
           )}
           {!release && !error && (
@@ -210,11 +246,6 @@ export default function DownloadsPage() {
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{p.sublabel}</div>
                   </div>
 
-                  {stats && stats.totals[p.key] > 0 && (
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>
-                      {fmt(stats.totals[p.key])} downloads
-                    </div>
-                  )}
 
                   {url ? (
                     <a
