@@ -18,6 +18,7 @@ export interface VersionStats {
 
 export interface DownloadStats {
   totals: PlatformCounts
+  uniqueEst: PlatformCounts  // max downloads any single release received — lower bound on unique users
   versions: VersionStats[]
   latestPublishedAt: string | null
 }
@@ -46,6 +47,7 @@ export function useDownloadStats(githubRepo: string): DownloadStats | null {
         }[] = await res.json()
 
         const totals: PlatformCounts = { mac: 0, windows: 0, linux: 0, total: 0 }
+        const uniqueEst: PlatformCounts = { mac: 0, windows: 0, linux: 0, total: 0 }
         const versions: VersionStats[] = []
 
         for (const r of releases) {
@@ -62,11 +64,17 @@ export function useDownloadStats(githubRepo: string): DownloadStats | null {
             totals[platform] += asset.download_count
             totals.total += asset.download_count
           }
-          if (v.total > 0) versions.push(v)
+          if (v.total > 0) {
+            versions.push(v)
+            uniqueEst.mac     = Math.max(uniqueEst.mac, v.mac)
+            uniqueEst.windows = Math.max(uniqueEst.windows, v.windows)
+            uniqueEst.linux   = Math.max(uniqueEst.linux, v.linux)
+            uniqueEst.total   = Math.max(uniqueEst.total, v.total)
+          }
         }
 
         const latestPublishedAt = releases[0]?.published_at ?? null
-        setStats({ totals, versions, latestPublishedAt })
+        setStats({ totals, uniqueEst, versions, latestPublishedAt })
       } catch {}
     })()
   }, [githubRepo])
