@@ -1,7 +1,24 @@
+import { useEffect, useState } from 'react'
 import Footer from '../components/Footer'
 import '../styles/app.css'
 
 const GITHUB = 'm4tuna/fibertuner-site'
+
+async function fetchArtworkUrl(artist: string, album: string): Promise<string | null> {
+  try {
+    const q = encodeURIComponent(`${artist} ${album}`)
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&media=music&limit=5`)
+    const data = await res.json()
+    const match = (data.results ?? []).find((r: any) =>
+      r.collectionType === 'Album' &&
+      r.collectionName?.toLowerCase().includes(album.toLowerCase().slice(0, 6))
+    ) ?? data.results?.[0]
+    if (!match?.artworkUrl100) return null
+    return match.artworkUrl100.replace('100x100bb', '600x600bb')
+  } catch {
+    return null
+  }
+}
 
 export default function SharePage() {
   const params = new URLSearchParams(window.location.search)
@@ -15,23 +32,51 @@ export default function SharePage() {
   const displayTitle = isTrack ? title : album
   const displaySub = isTrack ? `${artist} · ${album}` : artist
 
+  const [artUrl, setArtUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!artist && !album) return
+    fetchArtworkUrl(artist, album).then(setArtUrl)
+  }, [artist, album])
+
   return (
     <div>
       <header className="site-header">
         <a href="/" className="site-header__logo">Fibertuner</a>
       </header>
 
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '80px 40px 40px', textAlign: 'center' }}>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '64px 40px 40px', textAlign: 'center' }}>
+        {artUrl && (
+          <div style={{
+            width: 200, height: 200,
+            margin: '0 auto 32px',
+            borderRadius: 12,
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+            background: 'rgba(255,255,255,0.05)',
+          }}>
+            <img src={artUrl} alt={album} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          </div>
+        )}
+        {!artUrl && (
+          <div style={{
+            width: 200, height: 200,
+            margin: '0 auto 32px',
+            borderRadius: 12,
+            background: 'rgba(255,255,255,0.05)',
+          }} />
+        )}
+
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
           {isTrack ? 'Track' : 'Album'}
         </div>
         {displayTitle && (
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 6, lineHeight: 1.2 }}>
             {displayTitle}
           </h1>
         )}
         {displaySub && (
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', marginBottom: 40 }}>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 36 }}>
             {displaySub}
           </p>
         )}
@@ -41,7 +86,7 @@ export default function SharePage() {
             href={deepLinkUrl}
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              padding: '14px 32px', borderRadius: 24, fontSize: 15, fontWeight: 600,
+              padding: '13px 32px', borderRadius: 24, fontSize: 15, fontWeight: 600,
               background: 'var(--accent)', color: '#fff', textDecoration: 'none',
               transition: 'opacity 0.1s',
             }}
@@ -49,22 +94,15 @@ export default function SharePage() {
             Open in Fibertuner
           </a>
           <a
-            href="/downloads"
+            href="/"
             style={{
-              fontSize: 13, color: 'rgba(255,255,255,0.45)',
+              fontSize: 13, color: 'rgba(255,255,255,0.4)',
               textDecoration: 'none',
               transition: 'color 0.1s',
             }}
           >
-            Don't have Fibertuner? Download it →
+            Learn more →
           </a>
-        </div>
-
-        <div style={{ marginTop: 60, padding: '24px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'left' }}>
-          <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'rgba(255,255,255,0.7)' }}>What is Fibertuner?</p>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, margin: 0 }}>
-            A native desktop app for Mac, Windows, and Linux that plays your Plex music library through any speakers, with deep Sonos integration and AI-powered features.
-          </p>
         </div>
       </div>
 
