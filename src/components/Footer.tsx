@@ -10,6 +10,7 @@ export default function Footer({ appName, githubRepo }: Props) {
         © {new Date().getFullYear()} {appName}
       </span>
       <div className="site-footer__links">
+        <a href="/privacy" className="site-footer__link">Privacy</a>
         {githubRepo && (
           <a
             href={`https://github.com/${githubRepo}`}
