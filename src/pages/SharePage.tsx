@@ -7,15 +7,13 @@ const GITHUB = 'm4tuna/fibertuner-site'
 
 async function fetchArtworkUrl(artist: string, album: string): Promise<string | null> {
   try {
-    const q = encodeURIComponent(`${artist} ${album}`)
-    const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&media=music&limit=5`)
+    const cleanAlbum = album.replace(/[^\w\s]/g, '').trim()
+    const q = encodeURIComponent(`artist:"${artist}" AND release:"${cleanAlbum}"`)
+    const res = await fetch(`https://musicbrainz.org/ws/2/release/?query=${q}&limit=5&fmt=json`)
     const data = await res.json()
-    const match = (data.results ?? []).find((r: any) =>
-      r.collectionType === 'Album' &&
-      r.collectionName?.toLowerCase().includes(album.toLowerCase().slice(0, 6))
-    ) ?? data.results?.[0]
-    if (!match?.artworkUrl100) return null
-    return match.artworkUrl100.replace('100x100bb', '600x600bb')
+    const release = (data.releases ?? []).find((r: any) => r.status === 'Official') ?? data.releases?.[0]
+    if (!release?.id) return null
+    return `https://coverartarchive.org/release/${release.id}/front`
   } catch {
     return null
   }

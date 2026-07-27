@@ -7,15 +7,17 @@ function esc(s: string): string {
 async function fetchArtworkUrl(artist: string, album: string): Promise<string> {
   const fallback = 'https://fibertuner.com/assets/fibertuner/screenshot-mac.png'
   try {
-    const q = encodeURIComponent(`${artist} ${album}`)
-    const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&media=music&limit=5`)
-    const data = await res.json()
-    const match = (data.results ?? []).find((r: any) =>
-      r.collectionType === 'Album' &&
-      r.collectionName?.toLowerCase().includes(album.toLowerCase().slice(0, 6))
-    ) ?? data.results?.[0]
-    if (!match?.artworkUrl100) return fallback
-    return match.artworkUrl100.replace('100x100bb', '600x600bb')
+    const cleanAlbum = album.replace(/[^\w\s]/g, '').trim()
+    const q = encodeURIComponent(`artist:"${artist}" AND release:"${cleanAlbum}"`)
+    const mbRes = await fetch(`https://musicbrainz.org/ws/2/release/?query=${q}&limit=5&fmt=json`, {
+      headers: { 'User-Agent': 'FibertunerShare/1.0 (fibertuner.com)' }
+    })
+    const mbData = await mbRes.json()
+    const release = (mbData.releases ?? []).find((r: any) => r.status === 'Official') ?? mbData.releases?.[0]
+    if (!release?.id) return fallback
+    const artRes = await fetch(`https://coverartarchive.org/release/${release.id}/front`, { redirect: 'follow' })
+    if (!artRes.ok) return fallback
+    return artRes.url
   } catch {
     return fallback
   }
