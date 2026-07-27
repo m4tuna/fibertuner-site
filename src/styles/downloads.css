@@ -1,0 +1,265 @@
+/* ── Downloads page ──────────────────────────────────────── */
+.downloads {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.downloads__body {
+  flex: 1;
+  position: relative;
+}
+
+.downloads__gradient {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 500px;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%);
+}
+
+.downloads__inner {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 72px 40px 80px;
+  position: relative;
+}
+
+.downloads__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 16px;
+}
+
+.downloads__title {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.08;
+  margin-bottom: 12px;
+}
+
+.downloads__meta {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 48px;
+}
+
+.downloads__loading {
+  font-size: 13px;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 48px;
+}
+
+.downloads__error {
+  font-size: 13px;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 48px;
+}
+
+.downloads__error-link {
+  color: var(--accent);
+}
+
+/* ── Admin stats wrapper ─────────────────────────────────── */
+.downloads__stats-body { flex: 1; }
+
+/* ── Invite banner ───────────────────────────────────────── */
+.invite-banner {
+  margin-bottom: 40px;
+  padding: 18px 22px;
+  background: color-mix(in srgb, var(--accent) 8%, rgba(14,14,24,0.8));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 14px;
+}
+
+.invite-banner__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 6px;
+  line-height: 1.45;
+}
+
+.invite-banner__accent { color: var(--accent); }
+
+.invite-banner__sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ── Success banner ──────────────────────────────────────── */
+.success-banner {
+  margin-bottom: 40px;
+  padding: 14px 20px;
+  background: color-mix(in srgb, var(--accent) 10%, rgba(14,14,24,0.8));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.success-banner__icon { font-size: 18px; }
+
+.success-banner__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 2px;
+}
+
+.success-banner__sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ── Platform grid ───────────────────────────────────────── */
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+/* ── Platform card ───────────────────────────────────────── */
+.platform-card {
+  padding: 22px 20px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.15s;
+}
+
+.platform-card--detected {
+  background: color-mix(in srgb, var(--accent) 6%, rgba(255,255,255,0.04));
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.platform-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.platform-card__icon {
+  color: rgba(255,255,255,0.55);
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.platform-card__badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--accent);
+}
+
+.platform-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  margin-bottom: 3px;
+}
+
+.platform-card__sublabel {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.platform-card__btn {
+  display: block;
+  padding: 10px 14px;
+  border-radius: 9px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.7);
+  transition: opacity 0.15s;
+}
+
+.platform-card--detected .platform-card__btn {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.platform-card__btn:hover { opacity: 0.8; }
+
+.platform-card__btn--unavailable {
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.06);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* ── Release notes ───────────────────────────────────────── */
+.release-notes {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 32px;
+}
+
+.release-notes__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 12px;
+}
+
+.release-notes__text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.75;
+  max-width: 520px;
+}
+
+/* ── After install ───────────────────────────────────────── */
+.after-install {
+  margin-top: 40px;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+}
+
+.after-install__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 8px;
+}
+
+.after-install__text {
+  font-size: 12px;
+  color: rgba(255,255,255,0.38);
+  line-height: 1.75;
+  margin: 0;
+}
+
+.after-install__strong { color: rgba(255,255,255,0.55); }
+
+/* ── Mobile ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .downloads__inner { padding: 52px 20px 60px; }
+  .platform-grid { grid-template-columns: 1fr; }
+}

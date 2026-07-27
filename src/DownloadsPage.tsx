@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import Footer from './components/Footer'
 import StatsPanel from './components/StatsPanel'
 import { supabase } from './lib/supabase'
+import './styles/downloads.css'
+
+const GITHUB = 'm4tuna/fibertuner-site'
 
 interface InviteInfo {
   username: string
   serverName: string
 }
-
-const ACCENT = '#a78bfa'
-const GITHUB = 'm4tuna/fibertuner-site'
 
 interface Release {
   version: string
@@ -31,28 +31,31 @@ interface PlatformInfo {
 }
 
 const PLATFORMS: PlatformInfo[] = [
-  { key: 'mac',     label: 'macOS',   sublabel: 'Apple Silicon & Intel',  format: '.dmg',      icon: MacIcon() },
-  { key: 'windows', label: 'Windows', sublabel: 'Windows 10+, x64',       format: '.exe',      icon: WindowsIcon() },
-  { key: 'linux',   label: 'Linux',   sublabel: 'x64 AppImage',           format: '.AppImage', icon: LinuxIcon() },
+  { key: 'mac',     label: 'macOS',   sublabel: 'Apple Silicon & Intel', format: '.dmg',      icon: MacIcon() },
+  { key: 'windows', label: 'Windows', sublabel: 'Windows 10+, x64',      format: '.exe',      icon: WindowsIcon() },
+  { key: 'linux',   label: 'Linux',   sublabel: 'x64 AppImage',          format: '.AppImage', icon: LinuxIcon() },
 ]
 
 function detectPlatform(): 'mac' | 'windows' | 'linux' | null {
   const ua = navigator.userAgent.toLowerCase()
-  if (ua.includes('mac')) return 'mac'
-  if (ua.includes('win')) return 'windows'
+  if (ua.includes('mac'))   return 'mac'
+  if (ua.includes('win'))   return 'windows'
   if (ua.includes('linux')) return 'linux'
   return null
 }
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+}
 
 export default function DownloadsPage() {
   const [release, setRelease] = useState<Release | null>(null)
-  const [error, setError] = useState(false)
-  const detectedPlatform = detectPlatform()
-  const params = new URLSearchParams(window.location.search)
-  const isSuccess = params.has('success')
-  const isAdmin = window.location.hostname === 'localhost' && params.has('stats')
-  const serverParam = params.get('server')
+  const [error, setError]     = useState(false)
+  const detectedPlatform      = detectPlatform()
+  const params                = new URLSearchParams(window.location.search)
+  const isSuccess             = params.has('success')
+  const isAdmin               = window.location.hostname === 'localhost' && params.has('stats')
+  const serverParam           = params.get('server')
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null)
 
   useEffect(() => {
@@ -79,35 +82,12 @@ export default function DownloadsPage() {
 
   if (isAdmin) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <header style={{
-          position: 'sticky', top: 0, zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px 40px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          background: 'rgba(8,8,14,0.85)',
-        }}>
-          <a href="/" style={{ textDecoration: 'none' }}>
-            <span style={{
-              fontSize: 12, fontWeight: 700,
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              background: `linear-gradient(95deg, #fff 0%, color-mix(in srgb, ${ACCENT} 40%, #fff) 100%)`,
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>Fibertuner</span>
-          </a>
-          <a
-            href="/downloads"
-            style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,1)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
-          >
-            ← Downloads
-          </a>
+      <div className="downloads">
+        <header className="site-header">
+          <a href="/" className="site-header__logo">Fibertuner</a>
+          <a href="/downloads" className="site-header__link">← Downloads</a>
         </header>
-        <div style={{ flex: 1 }}>
+        <div className="downloads__stats-body">
           <StatsPanel />
         </div>
         <Footer appName="Fibertuner" githubRepo={GITHUB} />
@@ -116,186 +96,103 @@ export default function DownloadsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 40px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        background: 'rgba(8,8,14,0.85)',
-      }}>
-        <a href="/" style={{ textDecoration: 'none' }}>
-          <span style={{
-            fontSize: 12, fontWeight: 700,
-            letterSpacing: '0.06em', textTransform: 'uppercase',
-            background: `linear-gradient(95deg, #fff 0%, color-mix(in srgb, ${ACCENT} 40%, #fff) 100%)`,
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>Fibertuner</span>
-        </a>
-        <a
-          href="/#pricing"
-          style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 0.15s' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,1)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
-        >
-          Pricing
-        </a>
+    <div className="downloads">
+      <header className="site-header">
+        <a href="/" className="site-header__logo">Fibertuner</a>
+        <a href="/#pricing" className="site-header__link">Pricing</a>
       </header>
 
-      <div style={{ flex: 1, position: 'relative' }}>
-        {/* Gradient */}
-        <div style={{
-          position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-          width: '100%', height: 500, pointerEvents: 'none',
-          background: `radial-gradient(ellipse 70% 50% at 50% 0%, color-mix(in srgb, ${ACCENT} 10%, transparent), transparent 70%)`,
-        }} />
+      <div className="downloads__body">
+        <div className="downloads__gradient" />
 
-        <div style={{ maxWidth: 780, margin: '0 auto', padding: '72px 40px 80px', position: 'relative' }}>
-
-          {/* Server invite banner */}
+        <div className="downloads__inner">
           {inviteInfo && (
-            <div style={{
-              marginBottom: 40, padding: '18px 22px',
-              background: `color-mix(in srgb, ${ACCENT} 8%, rgba(14,14,24,0.8))`,
-              border: `1px solid color-mix(in srgb, ${ACCENT} 22%, transparent)`,
-              borderRadius: 14,
-            }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.9)', marginBottom: 6, lineHeight: 1.45 }}>
-                <span style={{ color: ACCENT }}>{inviteInfo.username}</span>
+            <div className="invite-banner">
+              <p className="invite-banner__title">
+                <span className="invite-banner__accent">{inviteInfo.username}</span>
                 {' '}is inviting you to stream{' '}
-                <span style={{ color: ACCENT }}>{inviteInfo.serverName}</span>
+                <span className="invite-banner__accent">{inviteInfo.serverName}</span>
                 {' '}music on Fibertuner.
-              </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
+              </p>
+              <p className="invite-banner__sub">
                 Download the app below, sign in with Plex, and you're in.
-              </div>
+              </p>
             </div>
           )}
 
-          {/* Purchase success banner */}
           {isSuccess && (
-            <div style={{
-              marginBottom: 40, padding: '14px 20px',
-              background: `color-mix(in srgb, ${ACCENT} 10%, rgba(14,14,24,0.8))`,
-              border: `1px solid color-mix(in srgb, ${ACCENT} 25%, transparent)`,
-              borderRadius: 12,
-              display: 'flex', alignItems: 'center', gap: 12,
-            }}>
-              <span style={{ fontSize: 18 }}>🎉</span>
+            <div className="success-banner">
+              <span className="success-banner__icon">🎉</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)', marginBottom: 2 }}>
+                <div className="success-banner__title">
                   Purchase complete — thanks for your support!
                 </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
+                <div className="success-banner__sub">
                   Download Fibertuner below and activate with the license key in your email.
                 </div>
               </div>
             </div>
           )}
 
-          {/* Title */}
-          <p style={{
-            fontSize: 11, fontWeight: 600, letterSpacing: '0.13em',
-            textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)',
-            marginBottom: 16,
-          }}>
-            Downloads
-          </p>
-          <h1 style={{
-            fontSize: 'clamp(28px, 4vw, 44px)',
-            fontWeight: 600, letterSpacing: '-1px', lineHeight: 1.08,
-            marginBottom: 12,
-          }}>
-            Get Fibertuner
-          </h1>
+          <p className="downloads__eyebrow">Downloads</p>
+          <h1 className="downloads__title">Get Fibertuner</h1>
+
           {release && (
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 48 }}>
+            <p className="downloads__meta">
               Version {release.version} · {formatDate(release.date)}
             </p>
           )}
           {!release && !error && (
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', marginBottom: 48 }}>Loading…</p>
+            <p className="downloads__loading">Loading…</p>
           )}
           {error && (
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 48 }}>
+            <p className="downloads__error">
               Could not load release info.{' '}
-              <a href={`https://github.com/${GITHUB}/releases`} target="_blank" rel="noopener" style={{ color: ACCENT }}>
+              <a
+                href={`https://github.com/${GITHUB}/releases`}
+                target="_blank"
+                rel="noopener"
+                className="downloads__error-link"
+              >
                 Check GitHub Releases ↗
               </a>
             </p>
           )}
 
-          {/* Platform cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 40 }}>
+          <div className="platform-grid">
             {PLATFORMS.map(p => {
-              const url = release?.platforms[p.key]
+              const url        = release?.platforms[p.key]
               const isDetected = detectedPlatform === p.key
               return (
-                <div key={p.key} style={{
-                  padding: '22px 20px',
-                  borderRadius: 14,
-                  background: isDetected
-                    ? `color-mix(in srgb, ${ACCENT} 6%, rgba(255,255,255,0.04))`
-                    : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${isDetected
-                    ? `color-mix(in srgb, ${ACCENT} 30%, transparent)`
-                    : 'rgba(255,255,255,0.08)'}`,
-                  boxShadow: isDetected ? `0 0 32px color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none',
-                  display: 'flex', flexDirection: 'column', gap: 14,
-                  transition: 'border-color 0.15s',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                    <div style={{ color: 'rgba(255,255,255,0.55)', width: 28, height: 28, flexShrink: 0 }}
+                <div
+                  key={p.key}
+                  className={`platform-card${isDetected ? ' platform-card--detected' : ''}`}
+                >
+                  <div className="platform-card__top">
+                    <div
+                      className="platform-card__icon"
                       dangerouslySetInnerHTML={{ __html: p.icon }}
                     />
                     {isDetected && (
-                      <span style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
-                        textTransform: 'uppercase', padding: '2px 7px', borderRadius: 20,
-                        background: `color-mix(in srgb, ${ACCENT} 18%, transparent)`,
-                        border: `1px solid color-mix(in srgb, ${ACCENT} 30%, transparent)`,
-                        color: ACCENT,
-                      }}>Your system</span>
+                      <span className="platform-card__badge">Your system</span>
                     )}
                   </div>
 
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: 3 }}>
-                      {p.label}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{p.sublabel}</div>
+                    <div className="platform-card__name">{p.label}</div>
+                    <div className="platform-card__sublabel">{p.sublabel}</div>
                   </div>
-
 
                   {url ? (
                     <a
                       href={url}
                       download
-                      style={{
-                        display: 'block', padding: '10px 14px',
-                        borderRadius: 9, textAlign: 'center',
-                        fontSize: 12, fontWeight: 600, textDecoration: 'none',
-                        background: isDetected ? ACCENT : 'rgba(255,255,255,0.09)',
-                        color: isDetected ? '#08080e' : 'rgba(255,255,255,0.7)',
-                        transition: 'opacity 0.15s',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                      className="platform-card__btn"
                     >
                       Download {p.format}
                     </a>
                   ) : (
-                    <div style={{
-                      padding: '10px 14px', borderRadius: 9, textAlign: 'center',
-                      fontSize: 12, fontWeight: 500,
-                      background: 'rgba(255,255,255,0.03)',
-                      color: 'rgba(255,255,255,0.2)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                    }}>
+                    <div className="platform-card__btn platform-card__btn--unavailable">
                       Coming soon
                     </div>
                   )}
@@ -304,48 +201,30 @@ export default function DownloadsPage() {
             })}
           </div>
 
-          {/* Release notes */}
           {release?.notes && (
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 32 }}>
-              <div style={{
-                fontSize: 10, fontWeight: 600, letterSpacing: '0.1em',
-                textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
-                marginBottom: 12,
-              }}>What's new in {release.version}</div>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.75, maxWidth: 520 }}>
-                {release.notes}
-              </p>
+            <div className="release-notes">
+              <div className="release-notes__label">What's new in {release.version}</div>
+              <p className="release-notes__text">{release.notes}</p>
             </div>
           )}
 
-          {/* After install note (only on success page) */}
           {isSuccess && (
-            <div style={{
-              marginTop: 40, padding: '16px 20px',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 12,
-            }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
-                After installing
-              </div>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', lineHeight: 1.75, margin: 0 }}>
-                Open Fibertuner, sign in with Plex, then go to <strong style={{ color: 'rgba(255,255,255,0.55)' }}>Settings → Account</strong> and enter your license key from the confirmation email.
+            <div className="after-install">
+              <div className="after-install__title">After installing</div>
+              <p className="after-install__text">
+                Open Fibertuner, sign in with Plex, then go to{' '}
+                <strong className="after-install__strong">Settings → Account</strong>{' '}
+                and enter your license key from the confirmation email.
                 Server plan? Just share the app — your users log in with Plex and they're automatically unlocked.
               </p>
             </div>
           )}
-
         </div>
       </div>
 
       <Footer appName="Fibertuner" githubRepo={GITHUB} />
     </div>
   )
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 function MacIcon() {

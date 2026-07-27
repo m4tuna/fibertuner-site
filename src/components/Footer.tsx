@@ -5,34 +5,26 @@ interface Props {
 
 export default function Footer({ appName, githubRepo }: Props) {
   return (
-    <footer style={{
-      borderTop: '1px solid rgba(255,255,255,0.08)',
-      padding: '28px 40px',
-      display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 16, flexWrap: 'wrap',
-    }}>
-      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>
+    <footer className="site-footer">
+      <span className="site-footer__copy">
         © {new Date().getFullYear()} {appName}
       </span>
-      <div style={{ display: 'flex', gap: 22 }}>
+      <div className="site-footer__links">
         {githubRepo && (
           <a
             href={`https://github.com/${githubRepo}`}
-            target="_blank" rel="noopener"
-            style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none', transition: 'color 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
+            target="_blank"
+            rel="noopener"
+            className="site-footer__link"
           >
             GitHub
           </a>
         )}
         <a
           href="https://github.com/m4tuna"
-          target="_blank" rel="noopener"
-          style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none', transition: 'color 0.15s' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
+          target="_blank"
+          rel="noopener"
+          className="site-footer__link"
         >
           @m4tuna
         </a>
