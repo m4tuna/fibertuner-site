@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import Footer from './components/Footer'
-import { useDownloadStats, fmt } from './hooks/useDownloadStats'
 import StatsPanel from './components/StatsPanel'
 import { supabase } from './lib/supabase'
 
@@ -50,7 +49,6 @@ export default function DownloadsPage() {
   const [release, setRelease] = useState<Release | null>(null)
   const [error, setError] = useState(false)
   const detectedPlatform = detectPlatform()
-  const stats = useDownloadStats(GITHUB)
   const params = new URLSearchParams(window.location.search)
   const isSuccess = params.has('success')
   const isAdmin = window.location.hostname === 'localhost' && params.has('stats')
@@ -217,21 +215,6 @@ export default function DownloadsPage() {
           {release && (
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 48 }}>
               Version {release.version} · {formatDate(release.date)}
-              {stats?.totals?.total != null && stats.totals.total > 0 && (
-                <span style={{ color: 'rgba(255,255,255,0.25)', marginLeft: 8 }}>
-                  · {fmt(stats.totals.total)} total downloads
-                  {stats.uniqueEst?.total != null && stats.uniqueEst.total > 0 && (
-                    <span style={{ color: 'rgba(255,255,255,0.15)' }}>
-                      {' '}({fmt(stats.uniqueEst.total)} unique)
-                    </span>
-                  )}
-                </span>
-              )}
-              {stats?.latestPublishedAt && (
-                <span style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>
-                  · Built {formatTimestamp(stats.latestPublishedAt)}
-                </span>
-              )}
             </p>
           )}
           {!release && !error && (
@@ -363,13 +346,6 @@ export default function DownloadsPage() {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-}
-
-function formatTimestamp(iso: string) {
-  return new Date(iso).toLocaleString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
-  })
 }
 
 function MacIcon() {
