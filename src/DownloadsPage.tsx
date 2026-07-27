@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
 import Footer from './components/Footer'
-import { useDownloadStats } from './hooks/useDownloadStats'
-import { supabase } from './lib/supabase'
+import { useDownloadStats, fmt } from './hooks/useDownloadStats'
 import StatsPanel from './components/StatsPanel'
+import { supabase } from './lib/supabase'
+
+interface InviteInfo {
+  username: string
+  serverName: string
+}
 
 const ACCENT = '#a78bfa'
 const GITHUB = 'm4tuna/fibertuner-site'
@@ -40,17 +45,6 @@ function detectPlatform(): 'mac' | 'windows' | 'linux' | null {
   return null
 }
 
-async function trackDownload(platform: string, version: string) {
-  try {
-    await supabase.from('download_clicks').insert([{
-      platform,
-      version,
-      user_agent: navigator.userAgent,
-      referrer: document.referrer || null,
-      detected_os: detectPlatform(),
-    }])
-  } catch {}
-}
 
 export default function DownloadsPage() {
   const [release, setRelease] = useState<Release | null>(null)
@@ -60,6 +54,8 @@ export default function DownloadsPage() {
   const params = new URLSearchParams(window.location.search)
   const isSuccess = params.has('success')
   const isAdmin = window.location.hostname === 'localhost' && params.has('stats')
+  const serverParam = params.get('server')
+  const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null)
 
   useEffect(() => {
     fetch('/releases/latest.json')
@@ -67,6 +63,21 @@ export default function DownloadsPage() {
       .then(setRelease)
       .catch(() => setError(true))
   }, [])
+
+  useEffect(() => {
+    if (!serverParam) return
+    supabase
+      .from('profiles')
+      .select('plex_username, server_name')
+      .eq('server_machine_id', serverParam)
+      .eq('server_owned', true)
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setInviteInfo({ username: data[0].plex_username, serverName: data[0].server_name })
+        }
+      })
+  }, [serverParam])
 
   if (isAdmin) {
     return (
@@ -147,6 +158,26 @@ export default function DownloadsPage() {
 
         <div style={{ maxWidth: 780, margin: '0 auto', padding: '72px 40px 80px', position: 'relative' }}>
 
+          {/* Server invite banner */}
+          {inviteInfo && (
+            <div style={{
+              marginBottom: 40, padding: '18px 22px',
+              background: `color-mix(in srgb, ${ACCENT} 8%, rgba(14,14,24,0.8))`,
+              border: `1px solid color-mix(in srgb, ${ACCENT} 22%, transparent)`,
+              borderRadius: 14,
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.9)', marginBottom: 6, lineHeight: 1.45 }}>
+                <span style={{ color: ACCENT }}>{inviteInfo.username}</span>
+                {' '}is inviting you to stream{' '}
+                <span style={{ color: ACCENT }}>{inviteInfo.serverName}</span>
+                {' '}music on Fibertuner.
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
+                Download the app below, sign in with Plex, and you're in.
+              </div>
+            </div>
+          )}
+
           {/* Purchase success banner */}
           {isSuccess && (
             <div style={{
@@ -186,6 +217,16 @@ export default function DownloadsPage() {
           {release && (
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 48 }}>
               Version {release.version} · {formatDate(release.date)}
+              {stats?.totals?.total != null && stats.totals.total > 0 && (
+                <span style={{ color: 'rgba(255,255,255,0.25)', marginLeft: 8 }}>
+                  · {fmt(stats.totals.total)} total downloads
+                  {stats.uniqueEst?.total != null && stats.uniqueEst.total > 0 && (
+                    <span style={{ color: 'rgba(255,255,255,0.15)' }}>
+                      {' '}({fmt(stats.uniqueEst.total)} unique)
+                    </span>
+                  )}
+                </span>
+              )}
               {stats?.latestPublishedAt && (
                 <span style={{ color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>
                   · Built {formatTimestamp(stats.latestPublishedAt)}
@@ -251,7 +292,6 @@ export default function DownloadsPage() {
                     <a
                       href={url}
                       download
-                      onClick={() => trackDownload(p.key, release?.version ?? 'unknown')}
                       style={{
                         display: 'block', padding: '10px 14px',
                         borderRadius: 9, textAlign: 'center',
