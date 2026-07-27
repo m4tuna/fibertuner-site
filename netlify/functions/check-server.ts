@@ -7,11 +7,6 @@ type LicenseRecord = {
   activeUntil: string | null
 }
 
-type PlexResource = {
-  clientIdentifier: string
-  provides: string
-}
-
 export default async (req: Request, _context: Context) => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 })
@@ -30,19 +25,14 @@ export default async (req: Request, _context: Context) => {
     return json({ licensed: false, error: "missing_params" })
   }
 
-  // Verify the user actually has access to this Plex server
+  // Validate the token belongs to a real Plex account (works for owners and shared users alike)
   try {
     const plexRes = await fetch(
-      `https://plex.tv/api/v2/resources?includeHttps=1&X-Plex-Token=${plexToken}&X-Plex-Client-Identifier=fibertuner`,
+      `https://plex.tv/api/v2/user?X-Plex-Token=${plexToken}&X-Plex-Client-Identifier=fibertuner`,
       { headers: { Accept: "application/json" } }
     )
     if (!plexRes.ok) {
       return json({ licensed: false, error: "plex_auth_failed" })
-    }
-    const resources: PlexResource[] = await plexRes.json()
-    const hasAccess = resources.some((r) => r.clientIdentifier === plexMachineId)
-    if (!hasAccess) {
-      return json({ licensed: false, error: "no_plex_access" })
     }
   } catch {
     return json({ licensed: false, error: "plex_check_failed" })
