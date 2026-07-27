@@ -12,30 +12,16 @@ export default async (req: Request, _context: Context) => {
     return new Response("Method Not Allowed", { status: 405 })
   }
 
-  let plexToken: string, plexMachineId: string
+  let plexMachineId: string
   try {
     const body = await req.json()
-    plexToken = body.plexToken
     plexMachineId = body.plexMachineId
   } catch {
     return json({ licensed: false, error: "bad_request" }, 400)
   }
 
-  if (!plexToken || !plexMachineId) {
+  if (!plexMachineId) {
     return json({ licensed: false, error: "missing_params" })
-  }
-
-  // Validate the token belongs to a real Plex account (works for owners and shared users alike)
-  try {
-    const plexRes = await fetch(
-      `https://plex.tv/api/v2/user?X-Plex-Token=${plexToken}&X-Plex-Client-Identifier=fibertuner`,
-      { headers: { Accept: "application/json" } }
-    )
-    if (!plexRes.ok) {
-      return json({ licensed: false, error: "plex_auth_failed" })
-    }
-  } catch {
-    return json({ licensed: false, error: "plex_check_failed" })
   }
 
   // Check blob store for an active server license
