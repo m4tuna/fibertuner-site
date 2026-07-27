@@ -88,6 +88,7 @@
 /* ── Screenshot carousel ─────────────────────────────────── */
 .screenshot-carousel {
   display: flex;
+  align-items: flex-start;
   overflow-x: auto;
   gap: 12px;
   scrollbar-width: none;
