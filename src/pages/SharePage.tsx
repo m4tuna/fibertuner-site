@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Footer from '../components/Footer'
+import { supabase } from '../lib/supabase'
 import '../styles/app.css'
 
 const GITHUB = 'm4tuna/fibertuner-site'
@@ -20,12 +21,18 @@ async function fetchArtworkUrl(artist: string, album: string): Promise<string | 
   }
 }
 
+interface SharerInfo {
+  username: string
+  serverName: string
+}
+
 export default function SharePage() {
   const params = new URLSearchParams(window.location.search)
   const title = params.get('t') ?? ''
   const artist = params.get('a') ?? ''
   const album = params.get('al') ?? ''
   const rk = params.get('rk') ?? ''
+  const server = params.get('s') ?? ''
 
   const isTrack = !!rk
   const deepLinkUrl = `fibertuner://share?${window.location.search.slice(1)}`
@@ -33,11 +40,27 @@ export default function SharePage() {
   const displaySub = isTrack ? `${artist} · ${album}` : artist
 
   const [artUrl, setArtUrl] = useState<string | null>(null)
+  const [sharer, setSharer] = useState<SharerInfo | null>(null)
 
   useEffect(() => {
     if (!artist && !album) return
     fetchArtworkUrl(artist, album).then(setArtUrl)
   }, [artist, album])
+
+  useEffect(() => {
+    if (!server) return
+    supabase
+      .from('profiles')
+      .select('plex_username, server_name')
+      .eq('server_machine_id', server)
+      .eq('server_owned', true)
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setSharer({ username: data[0].plex_username, serverName: data[0].server_name })
+        }
+      })
+  }, [server])
 
   return (
     <div>
@@ -46,6 +69,13 @@ export default function SharePage() {
       </header>
 
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '64px 40px 40px', textAlign: 'center' }}>
+        {sharer && (
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 32 }}>
+            Shared by <strong style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>{sharer.username}</strong>
+            {sharer.serverName ? <> · {sharer.serverName}</> : null}
+          </p>
+        )}
+
         {artUrl && (
           <div style={{
             width: 200, height: 200,
