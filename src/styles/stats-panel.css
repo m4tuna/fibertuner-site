@@ -239,7 +239,7 @@
 .user-list__header,
 .user-list__row {
   display: grid;
-  grid-template-columns: 28px 1fr 100px 80px;
+  grid-template-columns: 28px 1fr 100px 50px 80px;
   gap: 10px;
 }
 
@@ -298,6 +298,12 @@
 .user-list__server-star {
   color: var(--accent);
   margin-left: 4px;
+}
+
+.user-list__version {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
 }
 
 .user-list__seen {

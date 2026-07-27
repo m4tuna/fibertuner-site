@@ -20,6 +20,7 @@ interface ProfileRow {
   server_owned: boolean | null
   server_name: string | null
   server_machine_id: string | null
+  app_version: string | null
   updated_at: string | null
 }
 
@@ -173,7 +174,7 @@ function UserStats({ profiles }: { profiles: ProfileRow[] }) {
         <div className="stats-card">
           <div className="section-label">Recently Active Users</div>
           <div className="user-list__header">
-            {['', 'User', 'Server', 'Seen'].map(h => (
+            {['', 'User', 'Server', 'Version', 'Seen'].map(h => (
               <span key={h} className="user-list__col-head">{h}</span>
             ))}
           </div>
@@ -194,6 +195,7 @@ function UserStats({ profiles }: { profiles: ProfileRow[] }) {
                   {p.server_name ?? '—'}
                   {p.server_owned && <span className="user-list__server-star">★</span>}
                 </span>
+                <span className="user-list__version">{p.app_version ?? '—'}</span>
                 <span className="user-list__seen">
                   {p.updated_at
                     ? new Date(p.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
