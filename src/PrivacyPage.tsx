@@ -1,7 +1,6 @@
 import Footer from './components/Footer'
 
 const GITHUB = 'm4tuna/fibertuner'
-const CONTACT = 'm4tuna@gmail.com'
 
 const SECTIONS = [
   {
@@ -25,10 +24,6 @@ We do not collect browsing data, analytics, or advertising identifiers.`,
   {
     title: 'Your rights',
     body: `If you are in the EU or California, you have the right to access, correct, or delete the personal data we hold about you. To exercise these rights, contact us by email.`,
-  },
-  {
-    title: 'Contact',
-    body: `Questions or deletion requests: ${CONTACT}`,
   },
 ]
 
