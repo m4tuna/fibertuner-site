@@ -1,35 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchAlbumArt } from '../lib/albumArt'
 import type {
   BroadcastSession,
   BroadcastTrack,
   BroadcastParticipant,
   BroadcastCommand,
 } from '../lib/broadcastTypes'
-
-async function fetchArtworkUrl(artist: string, album: string): Promise<string | null> {
-  const artistWord = artist.toLowerCase().split(' ')[0]
-  const trySearch = async (term: string): Promise<string | null> => {
-    try {
-      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=album&limit=5&media=music`)
-      const data = await res.json()
-      const best = (data.results ?? []).find((r: any) =>
-        r.artistName?.toLowerCase().includes(artistWord)
-      ) ?? data.results?.[0]
-      return best?.artworkUrl100
-        ? best.artworkUrl100.replace('100x100bb', '600x600bb')
-        : null
-    } catch { return null }
-  }
-  // Try artist+album first, fall back to artist alone
-  return (album ? await trySearch(`${artist} ${album}`) : null) ?? await trySearch(artist)
-}
-
-// Returns false for LAN IPs that guests can't reach from outside the home network
-function isPublicUrl(url: string): boolean {
-  if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) return false
-  return !/192\.168\.|\/\/10\.\d+\.|172\.(1[6-9]|2\d|3[01])\./.test(url)
-}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -676,13 +653,12 @@ export default function BroadcastPage() {
       })
   }, [code])
 
-  // Fetch album art — use direct artUrl only if it's a public URL; otherwise fall back to iTunes
+  // Fetch album art via shared utility (races MusicBrainz and iTunes)
   useEffect(() => {
     if (!session?.currentTrack) return
-    const { artUrl: directArt, artist, album } = session.currentTrack
-    if (directArt && isPublicUrl(directArt)) { setArtUrl(directArt); return }
-    if (artist) {
-      fetchArtworkUrl(artist, album || '').then(url => { if (url) setArtUrl(url) })
+    const { artist, album } = session.currentTrack
+    if (artist || album) {
+      fetchAlbumArt(artist, album).then(url => { if (url) setArtUrl(url) })
     }
   }, [session?.currentTrack?.title])
 
@@ -877,7 +853,7 @@ export default function BroadcastPage() {
         <section style={{ paddingTop: 24, paddingBottom: 20 }}>
           {/* Album art */}
           {(() => {
-            const displayArt = session.currentTrack?.artUrl || artUrl
+            const displayArt = artUrl || session.currentTrack?.artUrl
             return (
               <div style={{
                 width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',

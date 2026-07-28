@@ -1,23 +1,10 @@
 import { useEffect, useState } from 'react'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
+import { fetchAlbumArt } from '../lib/albumArt'
 import '../styles/app.css'
 
 const GITHUB = 'm4tuna/fibertuner-site'
-
-async function fetchArtworkUrl(artist: string, album: string): Promise<string | null> {
-  try {
-    const cleanAlbum = album.replace(/[^\w\s]/g, '').trim()
-    const q = encodeURIComponent(`artist:"${artist}" AND release:"${cleanAlbum}"`)
-    const res = await fetch(`https://musicbrainz.org/ws/2/release/?query=${q}&limit=5&fmt=json`)
-    const data = await res.json()
-    const release = (data.releases ?? []).find((r: any) => r.status === 'Official') ?? data.releases?.[0]
-    if (!release?.id) return null
-    return `https://coverartarchive.org/release/${release.id}/front`
-  } catch {
-    return null
-  }
-}
 
 interface SharerInfo {
   username: string
@@ -42,7 +29,7 @@ export default function SharePage() {
 
   useEffect(() => {
     if (!artist && !album) return
-    fetchArtworkUrl(artist, album).then(setArtUrl)
+    fetchAlbumArt(artist, album).then(setArtUrl)
   }, [artist, album])
 
   useEffect(() => {
