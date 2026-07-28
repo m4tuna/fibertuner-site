@@ -35,6 +35,18 @@ function randomUserId(): string {
   return `guest-${Math.random().toString(36).slice(2, 10)}`
 }
 
+// A session is "ended" if it has expired OR if state is 'stopped' and hasn't
+// been updated in the last 2 minutes (guards against the initial placeholder
+// row that startBroadcast writes with state='stopped' before the first poll).
+function isSessionEnded(session: BroadcastSession): boolean {
+  if (new Date(session.expiresAt) < new Date()) return true
+  if (session.state === 'stopped') {
+    const staleSecs = (Date.now() - new Date(session.updatedAt).getTime()) / 1000
+    if (staleSecs > 120) return true
+  }
+  return false
+}
+
 // Map DB snake_case row → camelCase BroadcastSession
 function rowToSession(row: Record<string, unknown>): BroadcastSession {
   return {
@@ -661,11 +673,11 @@ export default function BroadcastPage() {
           setLoading(false)
           return
         }
-        setSession(rowToSession(data as Record<string, unknown>))
+        const s = rowToSession(data as Record<string, unknown>)
+        setSession(s)
         setLoading(false)
 
-        const isExpired = new Date((data as any).expires_at) < new Date()
-        if (!isExpired) {
+        if (!isSessionEnded(s)) {
           // Fire deep link only for live sessions — opens the app if installed
           if (!deepLinkAttempted.current) {
             deepLinkAttempted.current = true
@@ -779,35 +791,55 @@ export default function BroadcastPage() {
     )
   }
 
-  if (error || !session) {
+  if (error || !session || isSessionEnded(session)) {
+    const sessionName = session ? (session.name || `${session.hostName}'s Broadcast`) : null
+    const lastTrack = session?.currentTrack
     return (
-      <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Broadcast not found</h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>This broadcast has ended.</p>
-        </div>
-      </div>
-    )
-  }
-
-  const isExpired = new Date(session.expiresAt) < new Date()
-
-  if (isExpired) {
-    return (
-      <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16, textAlign: 'center' }}>
+      <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20, textAlign: 'center' }}>
         {artUrl && (
-          <img src={artUrl} alt="" style={{ width: 100, height: 100, borderRadius: 10, objectFit: 'cover', opacity: 0.35 }} />
+          <img src={artUrl} alt="" style={{ width: 96, height: 96, borderRadius: 12, objectFit: 'cover', opacity: 0.3, filter: 'grayscale(40%)' }} />
+        )}
+        {!artUrl && (
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
+              <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+            </svg>
+          </div>
         )}
         <div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Broadcast Ended</div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{session.name || `${session.hostName}'s Broadcast`}</h2>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', marginBottom: 0 }}>This broadcast has ended.</p>
-          {session.currentTrack && (
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>
-              Last playing: {session.currentTrack.title} · {session.currentTrack.artist}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 20, padding: '4px 12px', marginBottom: 16,
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.25)' }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Broadcast Ended
+            </span>
+          </div>
+          {sessionName && (
+            <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px', color: '#fff' }}>{sessionName}</h2>
+          )}
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
+            {sessionName ? 'This broadcast has ended.' : 'This broadcast link is no longer active.'}
+          </p>
+          {lastTrack && (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', marginTop: 12 }}>
+              Last played: {lastTrack.title} · {lastTrack.artist}
             </p>
           )}
         </div>
+        <a
+          href="https://fibertuner.com"
+          style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none', marginTop: 8 }}
+        >
+          fibertuner.com
+        </a>
       </div>
     )
   }
