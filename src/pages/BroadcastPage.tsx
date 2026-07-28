@@ -337,9 +337,7 @@ function SearchSection({
     setSearching(true)
     const requestId = Math.random().toString(36).slice(2)
     const cmd: BroadcastCommand = { type: 'search-request', query: q.trim(), requestId, userId: myUserId }
-    supabase.channel(`broadcast:${broadcastCode}`).send({
-      type: 'broadcast', event: 'command', payload: cmd,
-    }).catch(() => {})
+    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
     // Auto-clear searching after 10s timeout
     setTimeout(() => setSearching(false), 10000)
   }, [broadcastCode, myUserId])
@@ -519,7 +517,7 @@ export default function BroadcastPage() {
     if (!code || !joined) return
 
     const ch = supabase
-      .channel(`broadcast-page:${code}`)
+      .channel(`broadcast:${code}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'broadcast_sessions', filter: `code=eq.${code}` },
@@ -568,15 +566,15 @@ export default function BroadcastPage() {
       }
     })
 
-    // Send via Broadcast
+    // Send via already-subscribed Broadcast channel
     const cmd: BroadcastCommand = { type: 'vote', trackUri, vote, userId: myUserId, displayName: myDisplayName }
-    supabase.channel(`broadcast:${code}`).send({ type: 'broadcast', event: 'command', payload: cmd }).catch(() => {})
+    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
   }, [code, myUserId, myDisplayName])
 
   const handleAddTrack = useCallback((track: BroadcastTrack) => {
     const cmd: BroadcastCommand = { type: 'add-track', track, addedBy: myDisplayName, userId: myUserId }
-    supabase.channel(`broadcast:${code}`).send({ type: 'broadcast', event: 'command', payload: cmd }).catch(() => {})
-  }, [code, myUserId, myDisplayName])
+    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+  }, [myUserId, myDisplayName])
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
