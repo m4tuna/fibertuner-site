@@ -1,0 +1,9 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [{
+      "appID": "TEAMID.com.m42.fibertuner",
+      "paths": ["/broadcast/*"]
+    }]
+  }
+}
