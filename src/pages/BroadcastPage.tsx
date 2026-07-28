@@ -65,7 +65,9 @@ function JoinScreen({
   artUrl: string | null
   onJoin: (name: string) => void
 }) {
-  const [name, setName] = useState('')
+  const [name, setName] = useState(() => {
+    try { return localStorage.getItem('broadcastDisplayName') || '' } catch { return '' }
+  })
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { inputRef.current?.focus() }, [])
 
@@ -644,11 +646,9 @@ export default function BroadcastPage() {
 
         const isExpired = new Date((data as any).expires_at) < new Date()
         if (!isExpired) {
-          if (!localStorage.getItem('broadcastDisplayName')) {
-            setShowNameModal(true)
-          } else {
-            setJoined(true)
-          }
+          // Always show the name screen so users can change their name.
+          // JoinScreen pre-fills the stored name so returning users just tap Join.
+          setShowNameModal(true)
         }
       })
   }, [code])
