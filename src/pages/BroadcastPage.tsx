@@ -9,13 +9,14 @@ import type {
 
 async function fetchArtworkUrl(artist: string, album: string): Promise<string | null> {
   try {
-    const cleanAlbum = album.replace(/[^\w\s]/g, '').trim()
-    const q = encodeURIComponent(`artist:"${artist}" AND release:"${cleanAlbum}"`)
-    const res = await fetch(`https://musicbrainz.org/ws/2/release/?query=${q}&limit=5&fmt=json`)
+    const q = encodeURIComponent(`${artist} ${album}`)
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=5&media=music`)
     const data = await res.json()
-    const release = (data.releases ?? []).find((r: any) => r.status === 'Official') ?? data.releases?.[0]
-    if (!release?.id) return null
-    return `https://coverartarchive.org/release/${release.id}/front`
+    const best = (data.results ?? []).find((r: any) =>
+      r.artistName?.toLowerCase().includes(artist.toLowerCase().split(' ')[0])
+    ) ?? data.results?.[0]
+    if (!best?.artworkUrl100) return null
+    return best.artworkUrl100.replace('100x100bb', '600x600bb')
   } catch {
     return null
   }
@@ -135,7 +136,7 @@ function JoinScreen({
         }} />
       </div>
 
-      <div style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 20px 40px', boxSizing: 'border-box' }}>
+      <div style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 20px', paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box' }}>
 
         {/* LIVE badge + session title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, marginTop: 4 }}>
@@ -230,8 +231,9 @@ function JoinScreen({
           style={{
             width: '100%', padding: '13px 16px',
             background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.13)',
-            borderRadius: 10, color: '#fff', fontSize: 15, outline: 'none',
+            borderRadius: 10, color: '#fff', fontSize: 16, outline: 'none',
             fontFamily: 'inherit', marginBottom: 12, boxSizing: 'border-box',
+            WebkitAppearance: 'none',
           }}
         />
         <button
@@ -424,15 +426,15 @@ function QueueRow({
       </div>
 
       {/* Vote buttons */}
-      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
         <button
           onClick={() => onVote(track.uri, 'up')}
           style={{
             background: myUp ? 'rgba(134,239,172,0.2)' : 'rgba(255,255,255,0.07)',
             border: myUp ? '1px solid rgba(134,239,172,0.4)' : '1px solid transparent',
             color: myUp ? '#86efac' : 'rgba(255,255,255,0.4)',
-            borderRadius: 6, padding: '4px 8px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', gap: 3,
+            borderRadius: 8, padding: '10px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', gap: 4, minWidth: 44, justifyContent: 'center',
           }}
         >
           ↑ {track.votes.up.length}
@@ -443,8 +445,8 @@ function QueueRow({
             background: myDown ? 'rgba(252,165,165,0.2)' : 'rgba(255,255,255,0.07)',
             border: myDown ? '1px solid rgba(252,165,165,0.4)' : '1px solid transparent',
             color: myDown ? '#fca5a5' : 'rgba(255,255,255,0.4)',
-            borderRadius: 6, padding: '4px 8px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', gap: 3,
+            borderRadius: 8, padding: '10px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', gap: 4, minWidth: 44, justifyContent: 'center',
           }}
         >
           ↓ {track.votes.down.length}
@@ -528,8 +530,8 @@ function SearchSection({
           style={{
             width: '100%', padding: '11px 16px',
             background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none',
-            fontFamily: 'inherit', boxSizing: 'border-box',
+            borderRadius: 10, color: '#fff', fontSize: 16, outline: 'none',
+            fontFamily: 'inherit', boxSizing: 'border-box', WebkitAppearance: 'none',
           }}
         />
         {searching && (
@@ -865,18 +867,23 @@ export default function BroadcastPage() {
         {/* Now Playing */}
         <section style={{ paddingTop: 24, paddingBottom: 20 }}>
           {/* Album art */}
-          <div style={{
-            width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
-            background: 'rgba(255,255,255,0.06)', marginBottom: 20,
-            boxShadow: session.currentTrack?.artUrl ? '0 20px 60px rgba(0,0,0,0.6)' : 'none',
-          }}>
-            {session.currentTrack?.artUrl ? (
-              <img src={session.currentTrack.artUrl} alt={session.currentTrack.album}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%' }} />
-            )}
-          </div>
+          {(() => {
+            const displayArt = session.currentTrack?.artUrl || artUrl
+            return (
+              <div style={{
+                width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
+                background: 'rgba(255,255,255,0.06)', marginBottom: 20,
+                boxShadow: displayArt ? '0 20px 60px rgba(0,0,0,0.6)' : 'none',
+              }}>
+                {displayArt ? (
+                  <img src={displayArt} alt={session.currentTrack?.album ?? ''}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%' }} />
+                )}
+              </div>
+            )
+          })()}
 
           {/* Track info */}
           {session.currentTrack ? (
@@ -927,7 +934,7 @@ export default function BroadcastPage() {
 
         {/* Queue tab */}
         {activeTab === 'queue' && (
-          <section style={{ paddingBottom: 40 }}>
+          <section style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))' }}>
             {session.queue.length === 0 ? (
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '32px 0' }}>
                 Queue is empty — search for tracks to add!
@@ -948,7 +955,7 @@ export default function BroadcastPage() {
 
         {/* Search tab */}
         {activeTab === 'search' && joined && (
-          <section style={{ paddingBottom: 40 }}>
+          <section style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))' }}>
             <SearchSection
               onAddTrack={handleAddTrack}
               broadcastCode={code}
