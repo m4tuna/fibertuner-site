@@ -729,6 +729,19 @@ export default function BroadcastPage() {
         }}>{code}</span>
       </header>
 
+      {/* Host context */}
+      <div style={{
+        padding: '10px 20px',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        background: 'rgba(255,255,255,0.02)',
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.38)',
+        lineHeight: 1.6,
+      }}>
+        <strong style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>{session.hostName}</strong>
+        {' '}is broadcasting their Plex queue live on Fibertuner — add tracks and vote on what's next.
+      </div>
+
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px' }}>
 
         {/* Now Playing */}
