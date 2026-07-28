@@ -40,7 +40,9 @@ export default async (request: Request, context: Context) => {
   const ogImage = (artist || album) ? await fetchArtworkUrl(artist, album) : 'https://fibertuner.com/assets/fibertuner/screenshot-mac.png'
 
   const response = await context.next()
-  const html = await response.text()
+  const rawHtml = await response.text()
+  // Strip static OG/twitter tags so the album art injected below wins.
+  const html = rawHtml.replace(/<meta\s+(?:property="og:[^"]*"|name="twitter:[^"]*")[^>]*\/?>/gi, '')
 
   const tags = `
     <meta property="og:title" content="${ogTitle}" />

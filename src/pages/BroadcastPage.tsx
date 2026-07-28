@@ -7,6 +7,20 @@ import type {
   BroadcastCommand,
 } from '../lib/broadcastTypes'
 
+async function fetchArtworkUrl(artist: string, album: string): Promise<string | null> {
+  try {
+    const cleanAlbum = album.replace(/[^\w\s]/g, '').trim()
+    const q = encodeURIComponent(`artist:"${artist}" AND release:"${cleanAlbum}"`)
+    const res = await fetch(`https://musicbrainz.org/ws/2/release/?query=${q}&limit=5&fmt=json`)
+    const data = await res.json()
+    const release = (data.releases ?? []).find((r: any) => r.status === 'Official') ?? data.releases?.[0]
+    if (!release?.id) return null
+    return `https://coverartarchive.org/release/${release.id}/front`
+  } catch {
+    return null
+  }
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function extractCode(): string {
@@ -53,29 +67,159 @@ function rowToSession(row: Record<string, unknown>): BroadcastSession {
   }
 }
 
-// ── Name prompt modal ──────────────────────────────────────────────────────────
+// ── Join screen ────────────────────────────────────────────────────────────────
 
-function NameModal({ onJoin }: { onJoin: (name: string) => void }) {
+function JoinScreen({
+  session,
+  artUrl,
+  onJoin,
+}: {
+  session: BroadcastSession
+  artUrl: string | null
+  onJoin: (name: string) => void
+}) {
   const [name, setName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { inputRef.current?.focus() }, [])
 
+  const sessionTitle = session.name || `${session.hostName}'s Broadcast`
+  const upNext = session.queue.slice(
+    session.currentIndex + 1,
+    session.currentIndex + 4
+  )
+
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(0,0,0,0.85)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24,
+      minHeight: '100vh', background: '#0a0a0a', color: '#fff',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
+      display: 'flex', flexDirection: 'column',
     }}>
-      <div style={{
-        background: '#111', border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: 16, padding: '32px 28px', width: '100%', maxWidth: 360,
-        textAlign: 'center',
-      }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Join the Broadcast</h2>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>
+      {/* Art hero — blurred bg + centered image */}
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', maxHeight: 280, overflow: 'hidden', flexShrink: 0 }}>
+        {artUrl ? (
+          <>
+            <img
+              src={artUrl} alt=""
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: 'cover', filter: 'blur(28px) saturate(120%) brightness(0.45)',
+                transform: 'scale(1.1)',
+              }}
+            />
+            <img
+              src={artUrl} alt={session.currentTrack?.album ?? ''}
+              style={{
+                position: 'relative', zIndex: 1,
+                display: 'block', margin: '0 auto',
+                height: '100%', width: 'auto', maxWidth: '100%',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.7))',
+              }}
+            />
+          </>
+        ) : (
+          <div style={{
+            width: '100%', height: '100%',
+            background: 'linear-gradient(135deg, rgba(167,139,250,0.15) 0%, rgba(0,0,0,0) 70%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5">
+              <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+            </svg>
+          </div>
+        )}
+        {/* Bottom gradient fade into page */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, zIndex: 2,
+          background: 'linear-gradient(to bottom, transparent, #0a0a0a)',
+        }} />
+      </div>
+
+      <div style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 20px 40px', boxSizing: 'border-box' }}>
+
+        {/* LIVE badge + session title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, marginTop: 4 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)',
+            borderRadius: 20, padding: '3px 9px',
+          }}>
+            <div style={{
+              width: 6, height: 6, borderRadius: '50%', background: '#4ade80',
+              boxShadow: '0 0 6px #4ade80',
+            }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#4ade80', letterSpacing: '0.08em' }}>LIVE</span>
+          </div>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
+            hosted by <strong style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{session.hostName}</strong>
+          </span>
+        </div>
+
+        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20, lineHeight: 1.2, color: '#fff' }}>
+          {sessionTitle}
+        </h1>
+
+        {/* Now playing */}
+        {session.currentTrack && (
+          <div style={{
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12, padding: '12px 14px', marginBottom: 12,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+              Now Playing
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {artUrl && (
+                <img src={artUrl} alt="" style={{ width: 40, height: 40, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {session.currentTrack.title}
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {session.currentTrack.artist}
+                  {session.currentTrack.album ? ` · ${session.currentTrack.album}` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Up next */}
+        {upNext.length > 0 && (
+          <div style={{
+            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 12, padding: '12px 14px', marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+              Up Next
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {upNext.map((t, i) => (
+                <div key={`${t.uri}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {t.artUrl ? (
+                    <img src={t.artUrl} alt="" style={{ width: 28, height: 28, borderRadius: 3, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 28, height: 28, borderRadius: 3, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {t.title}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {t.artist}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Name input + join */}
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>
           What should we call you?
-        </p>
+        </div>
         <input
           ref={inputRef}
           value={name}
@@ -84,24 +228,25 @@ function NameModal({ onJoin }: { onJoin: (name: string) => void }) {
           placeholder="Your name"
           maxLength={30}
           style={{
-            width: '100%', padding: '12px 16px',
-            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 10, color: '#fff', fontSize: 16, outline: 'none',
-            fontFamily: 'inherit', marginBottom: 16,
+            width: '100%', padding: '13px 16px',
+            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.13)',
+            borderRadius: 10, color: '#fff', fontSize: 15, outline: 'none',
+            fontFamily: 'inherit', marginBottom: 12, boxSizing: 'border-box',
           }}
         />
         <button
           onClick={() => { if (name.trim()) onJoin(name.trim()) }}
           disabled={!name.trim()}
           style={{
-            width: '100%', padding: '13px 0',
-            background: name.trim() ? 'var(--accent, #a78bfa)' : 'rgba(255,255,255,0.1)',
-            color: name.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+            width: '100%', padding: '14px 0',
+            background: name.trim() ? 'var(--accent, #a78bfa)' : 'rgba(255,255,255,0.08)',
+            color: name.trim() ? '#fff' : 'rgba(255,255,255,0.25)',
             borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 600,
             cursor: name.trim() ? 'pointer' : 'default', fontFamily: 'inherit',
+            transition: 'background 0.15s',
           }}
         >
-          Join
+          Join Broadcast
         </button>
       </div>
     </div>
@@ -454,6 +599,7 @@ export default function BroadcastPage() {
   const [joined, setJoined] = useState(false)
   const [showBanner, setShowBanner] = useState(true)
   const [activeTab, setActiveTab] = useState<'queue' | 'search'>('queue')
+  const [artUrl, setArtUrl] = useState<string | null>(null)
   // True for the first 2s after the deep link fires — prevents showing the error
   // state while iOS is still deciding whether to open the app.
   const [deepLinkPending, setDeepLinkPending] = useState(!!code)
@@ -511,6 +657,16 @@ export default function BroadcastPage() {
         }
       })
   }, [code])
+
+  // Fetch album art — prefer direct artUrl from broadcast, fall back to MusicBrainz
+  useEffect(() => {
+    if (!session?.currentTrack) return
+    const { artUrl: directArt, artist, album } = session.currentTrack
+    if (directArt) { setArtUrl(directArt); return }
+    if (artist && album) {
+      fetchArtworkUrl(artist, album).then(url => { if (url) setArtUrl(url) })
+    }
+  }, [session?.currentTrack?.title])
 
   // Subscribe to Postgres Realtime changes
   useEffect(() => {
@@ -595,24 +751,29 @@ export default function BroadcastPage() {
   // whether the session fetch has finished — the user may be opening the app.
   if (deepLinkPending) {
     return (
-      <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ textAlign: 'center' }}>
-          {session ? (
-            <>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Joining
+      <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20 }}>
+        {session ? (
+          <>
+            {artUrl && (
+              <img src={artUrl} alt="" style={{ width: 120, height: 120, borderRadius: 12, objectFit: 'cover', boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }} />
+            )}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Opening Fibertuner…
               </div>
-              <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 10, lineHeight: 1.2 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6, lineHeight: 1.2 }}>
                 {session.name || `${session.hostName}'s Broadcast`}
               </h2>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>
-                with {session.hostName}
-              </p>
-            </>
-          ) : (
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Opening Fibertuner…</div>
-          )}
-        </div>
+              {session.currentTrack && (
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 0 }}>
+                  {session.currentTrack.title} · {session.currentTrack.artist}
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Opening Fibertuner…</div>
+        )}
       </div>
     )
   }
@@ -696,11 +857,12 @@ export default function BroadcastPage() {
     )
   }
 
+  if (showNameModal && session) {
+    return <JoinScreen session={session} artUrl={artUrl} onJoin={handleJoin} />
+  }
+
   return (
     <div style={pageStyle}>
-      {/* Name modal */}
-      {showNameModal && <NameModal onJoin={handleJoin} />}
-
       {/* App banner */}
       {showBanner && <AppBanner onDismiss={() => setShowBanner(false)} />}
 

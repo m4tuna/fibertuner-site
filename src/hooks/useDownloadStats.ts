@@ -23,10 +23,12 @@ export interface DownloadStats {
   latestPublishedAt: string | null
 }
 
-const ASSET_MAP: Record<string, keyof Omit<PlatformCounts, 'total'>> = {
-  'Fibertuner-mac.dmg':        'mac',
-  'Fibertuner-win.exe':        'windows',
-  'Fibertuner-linux.AppImage': 'linux',
+function getPlatform(name: string): keyof Omit<PlatformCounts, 'total'> | null {
+  if (name.endsWith('.dmg')) return 'mac'
+  if (name.endsWith('.zip') && name.toLowerCase().includes('mac')) return 'mac'
+  if (name.endsWith('.exe')) return 'windows'
+  if (name.endsWith('.AppImage')) return 'linux'
+  return null
 }
 
 export function useDownloadStats(githubRepo: string): DownloadStats | null {
@@ -57,7 +59,7 @@ export function useDownloadStats(githubRepo: string): DownloadStats | null {
             mac: 0, windows: 0, linux: 0, total: 0,
           }
           for (const asset of r.assets) {
-            const platform = ASSET_MAP[asset.name]
+            const platform = getPlatform(asset.name)
             if (!platform) continue
             v[platform] += asset.download_count
             v.total += asset.download_count
