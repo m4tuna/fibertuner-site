@@ -125,7 +125,7 @@ function AppBanner({ onDismiss }: { onDismiss: () => void }) {
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Better experience in the app</div>
       </div>
       <a
-        href="https://fibertuner.app"
+        href="https://fibertuner.com"
         style={{
           fontSize: 12, fontWeight: 600, color: 'var(--accent, #a78bfa)',
           textDecoration: 'none', whiteSpace: 'nowrap',
