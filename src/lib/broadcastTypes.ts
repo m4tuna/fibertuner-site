@@ -38,6 +38,7 @@ export interface BroadcastParticipant {
 
 export type BroadcastCommand =
   | { type: 'add-track';      track: BroadcastTrack; addedBy: string; userId: string }
+  | { type: 'play-next';      track: BroadcastTrack; addedBy: string; userId: string }
   | { type: 'vote';           trackUri: string; vote: 'up' | 'down'; userId: string; displayName: string }
   | { type: 'search-request'; query: string; requestId: string; userId: string }
   | { type: 'search-results'; requestId: string; results: BroadcastTrack[] }

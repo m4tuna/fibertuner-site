@@ -448,12 +448,14 @@ function QueueRow({
 
 function SearchSection({
   onAddTrack,
+  onPlayNext,
   broadcastCode,
   myUserId,
   myDisplayName,
   queue,
 }: {
   onAddTrack: (track: BroadcastTrack) => void
+  onPlayNext: (track: BroadcastTrack) => void
   broadcastCode: string
   myUserId: string
   myDisplayName: string
@@ -508,13 +510,19 @@ function SearchSection({
     }
   }
 
+  const handlePlayNext = (track: BroadcastTrack) => {
+    onPlayNext(track)
+    setResults([])
+    setQuery('')
+  }
+
   return (
     <div>
       <div style={{ position: 'relative' }}>
         <input
           value={query}
           onChange={handleInput}
-          placeholder="Search tracks..."
+          placeholder="Artists, albums, tracks…"
           style={{
             width: '100%', padding: '11px 16px',
             background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
@@ -561,14 +569,12 @@ function SearchSection({
       {results.length > 0 && (
         <div style={{ marginTop: 8, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
           {results.map((r, i) => (
-            <button
+            <div
               key={`${r.uri}-${i}`}
-              onClick={() => handleAdd({ ...r, addedBy: myDisplayName, votes: { up: [], down: [] } })}
               style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
-                border: 'none', borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                cursor: 'pointer', textAlign: 'left', color: '#fff', fontFamily: 'inherit',
+                borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
               }}
             >
               {r.artUrl ? (
@@ -577,11 +583,32 @@ function SearchSection({
                 <div style={{ width: 36, height: 36, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>{r.title}</div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist} · {r.album}</div>
               </div>
-              <span style={{ fontSize: 11, color: 'var(--accent, #a78bfa)', flexShrink: 0 }}>+ Add</span>
-            </button>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button
+                  onClick={() => handlePlayNext({ ...r, addedBy: myDisplayName, votes: { up: [], down: [] } })}
+                  title="Play Next"
+                  style={{
+                    padding: '6px 10px', background: 'rgba(167,139,250,0.15)',
+                    border: '1px solid rgba(167,139,250,0.3)', borderRadius: 7,
+                    color: '#a78bfa', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                    fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  }}
+                >▶︎ Next</button>
+                <button
+                  onClick={() => handleAdd({ ...r, addedBy: myDisplayName, votes: { up: [], down: [] } })}
+                  title="Add to Queue"
+                  style={{
+                    padding: '6px 10px', background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7,
+                    color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                    fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  }}
+                >+ Queue</button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -615,13 +642,6 @@ export default function BroadcastPage() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const deepLinkAttempted = useRef(false)
 
-  // Fire deep link silently — opens the app if installed, page content shows regardless
-  useEffect(() => {
-    if (!code || deepLinkAttempted.current) return
-    deepLinkAttempted.current = true
-    window.location.href = `fibertuner://broadcast/${code}`
-  }, [code])
-
   // Fetch session row — no expiry filter so we can show context even for ended sessions
   useEffect(() => {
     if (!code) {
@@ -646,6 +666,11 @@ export default function BroadcastPage() {
 
         const isExpired = new Date((data as any).expires_at) < new Date()
         if (!isExpired) {
+          // Fire deep link only for live sessions — opens the app if installed
+          if (!deepLinkAttempted.current) {
+            deepLinkAttempted.current = true
+            window.location.href = `fibertuner://broadcast/${code}`
+          }
           // Always show the name screen so users can change their name.
           // JoinScreen pre-fills the stored name so returning users just tap Join.
           setShowNameModal(true)
@@ -726,6 +751,11 @@ export default function BroadcastPage() {
     channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
   }, [myUserId, myDisplayName])
 
+  const handlePlayNext = useCallback((track: BroadcastTrack) => {
+    const cmd: BroadcastCommand = { type: 'play-next', track, addedBy: myDisplayName, userId: myUserId }
+    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+  }, [myUserId, myDisplayName])
+
   // ── Render ────────────────────────────────────────────────────────────────────
 
   const pageStyle = {
@@ -754,17 +784,7 @@ export default function BroadcastPage() {
       <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Broadcast not found</h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Ask the host to share a new link.</p>
-          <button
-            onClick={() => { window.location.href = `fibertuner://broadcast/${code}` }}
-            style={{
-              padding: '11px 24px', background: 'rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 10, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            Open Fibertuner
-          </button>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>This broadcast has ended.</p>
         </div>
       </div>
     )
@@ -772,32 +792,22 @@ export default function BroadcastPage() {
 
   const isExpired = new Date(session.expiresAt) < new Date()
 
-  // Expired: show session context so guests know what they missed, plus a reopen CTA
   if (isExpired) {
     return (
       <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16, textAlign: 'center' }}>
         {artUrl && (
-          <img src={artUrl} alt="" style={{ width: 100, height: 100, borderRadius: 10, objectFit: 'cover', opacity: 0.5 }} />
+          <img src={artUrl} alt="" style={{ width: 100, height: 100, borderRadius: 10, objectFit: 'cover', opacity: 0.35 }} />
         )}
         <div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Broadcast Ended</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Broadcast Ended</div>
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{session.name || `${session.hostName}'s Broadcast`}</h2>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', marginBottom: 0 }}>This broadcast has ended.</p>
           {session.currentTrack && (
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 0 }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>
               Last playing: {session.currentTrack.title} · {session.currentTrack.artist}
             </p>
           )}
         </div>
-        <button
-          onClick={() => { window.location.href = `fibertuner://broadcast/${code}` }}
-          style={{
-            marginTop: 8, padding: '11px 24px', background: 'rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 10, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          Open Fibertuner
-        </button>
       </div>
     )
   }
@@ -943,6 +953,7 @@ export default function BroadcastPage() {
           <section style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))' }}>
             <SearchSection
               onAddTrack={handleAddTrack}
+              onPlayNext={handlePlayNext}
               broadcastCode={code}
               myUserId={myUserId}
               myDisplayName={myDisplayName}
