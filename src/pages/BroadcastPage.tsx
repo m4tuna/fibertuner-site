@@ -72,7 +72,6 @@ function NameModal({ onJoin }: { onJoin: (name: string) => void }) {
         borderRadius: 16, padding: '32px 28px', width: '100%', maxWidth: 360,
         textAlign: 'center',
       }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Join the Broadcast</h2>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>
           What should we call you?
@@ -125,7 +124,7 @@ function AppBanner({ onDismiss }: { onDismiss: () => void }) {
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Better experience in the app</div>
       </div>
       <a
-        href="https://fibertuner.app"
+        href="https://fibertuner.com"
         style={{
           fontSize: 12, fontWeight: 600, color: 'var(--accent, #a78bfa)',
           textDecoration: 'none', whiteSpace: 'nowrap',
@@ -212,7 +211,12 @@ function ParticipantsStrip({ participants, hostUserId }: { participants: Broadca
             {getInitials(p.displayName)}
           </div>
           <span style={{ color: 'rgba(255,255,255,0.8)' }}>{p.displayName}</span>
-          {p.isHost && <span style={{ fontSize: 10 }}>👑</span>}
+          {p.isHost && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, color: '#a78bfa',
+              letterSpacing: '0.05em', textTransform: 'uppercase',
+            }}>HOST</span>
+          )}
         </div>
       ))}
     </div>
@@ -245,10 +249,8 @@ function QueueRow({
         <img src={track.artUrl} alt="" style={{ width: 38, height: 38, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
       ) : (
         <div style={{
-          width: 38, height: 38, borderRadius: 4, background: 'rgba(255,255,255,0.08)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          fontSize: 16,
-        }}>♪</div>
+          width: 38, height: 38, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0,
+        }} />
       )}
 
       {/* Info */}
@@ -275,7 +277,7 @@ function QueueRow({
             display: 'flex', alignItems: 'center', gap: 3,
           }}
         >
-          👍 {track.votes.up.length}
+          ↑ {track.votes.up.length}
         </button>
         <button
           onClick={() => onVote(track.uri, 'down')}
@@ -287,7 +289,7 @@ function QueueRow({
             display: 'flex', alignItems: 'center', gap: 3,
           }}
         >
-          👎 {track.votes.down.length}
+          ↓ {track.votes.down.length}
         </button>
       </div>
     </div>
@@ -368,16 +370,12 @@ function SearchSection({
           onChange={handleInput}
           placeholder="Search tracks..."
           style={{
-            width: '100%', padding: '11px 16px 11px 40px',
+            width: '100%', padding: '11px 16px',
             background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none',
             fontFamily: 'inherit', boxSizing: 'border-box',
           }}
         />
-        <span style={{
-          position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-          fontSize: 14, color: 'rgba(255,255,255,0.35)',
-        }}>🔍</span>
         {searching && (
           <span style={{
             position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
@@ -430,7 +428,7 @@ function SearchSection({
               {r.artUrl ? (
                 <img src={r.artUrl} alt="" style={{ width: 36, height: 36, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 36, height: 36, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>♪</div>
+                <div style={{ width: 36, height: 36, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
@@ -458,6 +456,9 @@ export default function BroadcastPage() {
   const [joined, setJoined] = useState(false)
   const [showBanner, setShowBanner] = useState(true)
   const [activeTab, setActiveTab] = useState<'queue' | 'search'>('queue')
+  // True for the first 2s after the deep link fires — prevents showing the error
+  // state while iOS is still deciding whether to open the app.
+  const [deepLinkPending, setDeepLinkPending] = useState(!!code)
 
   // Guest identity
   const [myUserId] = useState<string>(() => {
@@ -470,11 +471,13 @@ export default function BroadcastPage() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const deepLinkAttempted = useRef(false)
 
-  // Deep link attempt on load
+  // Fire deep link; after 2s clear pending so the page can show normally
   useEffect(() => {
     if (!code || deepLinkAttempted.current) return
     deepLinkAttempted.current = true
     window.location.href = `fibertuner://broadcast/${code}`
+    const timer = setTimeout(() => setDeepLinkPending(false), 2000)
+    return () => clearTimeout(timer)
   }, [code])
 
   // Fetch session row
@@ -575,17 +578,48 @@ export default function BroadcastPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
+  const pageStyle = {
+    minHeight: '100vh', background: '#0a0a0a', color: '#fff',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
+  }
+
   if (!code) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Invalid broadcast URL.</p>
+      </div>
+    )
+  }
+
+  // While the deep link is pending, show a transitional screen regardless of
+  // whether the session fetch has finished — the user may be opening the app.
+  if (deepLinkPending) {
+    return (
+      <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center' }}>
+          {session ? (
+            <>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Joining
+              </div>
+              <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 10, lineHeight: 1.2 }}>
+                {session.name || `${session.hostName}'s Broadcast`}
+              </h2>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>
+                with {session.hostName}
+              </p>
+            </>
+          ) : (
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Opening Fibertuner…</div>
+          )}
+        </div>
       </div>
     )
   }
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Loading broadcast…</div>
       </div>
     )
@@ -593,9 +627,8 @@ export default function BroadcastPage() {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎵</div>
           <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{error}</h2>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Ask the host to start a new broadcast session.</p>
         </div>
@@ -608,9 +641,8 @@ export default function BroadcastPage() {
   const isExpired = new Date(session.expiresAt) < new Date()
   if (isExpired) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⏱️</div>
           <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Broadcast Ended</h2>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>This session has expired.</p>
         </div>
@@ -618,13 +650,8 @@ export default function BroadcastPage() {
     )
   }
 
-  const hostParticipant = participants.find(p => p.userId === session.hostUserId)
-  if (participants.length > 0 && !hostParticipant) {
-    // Host is not in presence — they may be offline
-  }
-
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif' }}>
+    <div style={pageStyle}>
       {/* Name modal */}
       {showNameModal && <NameModal onJoin={handleJoin} />}
 
@@ -668,7 +695,7 @@ export default function BroadcastPage() {
               <img src={session.currentTrack.artUrl} alt={session.currentTrack.album}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             ) : (
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 64, color: 'rgba(255,255,255,0.15)' }}>♪</div>
+              <div style={{ width: '100%', height: '100%' }} />
             )}
           </div>
 
