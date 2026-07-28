@@ -248,6 +248,19 @@ function JoinScreen({
         >
           Join Broadcast
         </button>
+
+        <div style={{ marginTop: 12, textAlign: 'center' }}>
+          <button
+            onClick={() => { window.location.href = `fibertuner://broadcast/${session.code}` }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 12, color: 'rgba(255,255,255,0.3)', fontFamily: 'inherit',
+              textDecoration: 'underline', textUnderlineOffset: 3,
+            }}
+          >
+            Open in Fibertuner app instead
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -600,9 +613,6 @@ export default function BroadcastPage() {
   const [showBanner, setShowBanner] = useState(true)
   const [activeTab, setActiveTab] = useState<'queue' | 'search'>('queue')
   const [artUrl, setArtUrl] = useState<string | null>(null)
-  // True for the first 2s after the deep link fires — prevents showing the error
-  // state while iOS is still deciding whether to open the app.
-  const [deepLinkPending, setDeepLinkPending] = useState(!!code)
 
   // Guest identity
   const [myUserId] = useState<string>(() => {
@@ -614,19 +624,15 @@ export default function BroadcastPage() {
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const deepLinkAttempted = useRef(false)
-  const deepLinkFired = useRef(false)
 
-  // Fire deep link; after 2s clear pending so the page can show normally
+  // Fire deep link silently — opens the app if installed, page content shows regardless
   useEffect(() => {
     if (!code || deepLinkAttempted.current) return
     deepLinkAttempted.current = true
     window.location.href = `fibertuner://broadcast/${code}`
-    deepLinkFired.current = true
-    const timer = setTimeout(() => setDeepLinkPending(false), 2000)
-    return () => clearTimeout(timer)
   }, [code])
 
-  // Fetch session row
+  // Fetch session row — no expiry filter so we can show context even for ended sessions
   useEffect(() => {
     if (!code) {
       setError('Invalid broadcast code.')
@@ -638,22 +644,23 @@ export default function BroadcastPage() {
       .from('broadcast_sessions')
       .select('*')
       .eq('code', code)
-      .gt('expires_at', new Date().toISOString())
       .single()
       .then(({ data, error: err }) => {
         if (err || !data) {
-          setError('Broadcast session not found or has expired.')
+          setError('Broadcast not found.')
           setLoading(false)
           return
         }
         setSession(rowToSession(data as Record<string, unknown>))
         setLoading(false)
 
-        // Show name modal if no display name
-        if (!localStorage.getItem('broadcastDisplayName')) {
-          setShowNameModal(true)
-        } else {
-          setJoined(true)
+        const isExpired = new Date((data as any).expires_at) < new Date()
+        if (!isExpired) {
+          if (!localStorage.getItem('broadcastDisplayName')) {
+            setShowNameModal(true)
+          } else {
+            setJoined(true)
+          }
         }
       })
   }, [code])
@@ -747,37 +754,6 @@ export default function BroadcastPage() {
     )
   }
 
-  // While the deep link is pending, show a transitional screen regardless of
-  // whether the session fetch has finished — the user may be opening the app.
-  if (deepLinkPending) {
-    return (
-      <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20 }}>
-        {session ? (
-          <>
-            {artUrl && (
-              <img src={artUrl} alt="" style={{ width: 120, height: 120, borderRadius: 12, objectFit: 'cover', boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }} />
-            )}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Opening Fibertuner…
-              </div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6, lineHeight: 1.2 }}>
-                {session.name || `${session.hostName}'s Broadcast`}
-              </h2>
-              {session.currentTrack && (
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 0 }}>
-                  {session.currentTrack.title} · {session.currentTrack.artist}
-                </p>
-              )}
-            </div>
-          </>
-        ) : (
-          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Opening Fibertuner…</div>
-        )}
-      </div>
-    )
-  }
-
   if (loading) {
     return (
       <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -786,78 +762,60 @@ export default function BroadcastPage() {
     )
   }
 
-  // If the deep link fired (user was sent to the app) but the session lookup
-  // failed, don't show a confusing "expired" error — offer to reopen the app.
-  if (error || (!loading && !session)) {
-    if (deepLinkFired.current) {
-      return (
-        <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Broadcast
-            </div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Open in Fibertuner</h2>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24, lineHeight: 1.6 }}>
-              You were redirected to the app. Tap below if it didn't open.
-            </p>
-            <button
-              onClick={() => { window.location.href = `fibertuner://broadcast/${code}` }}
-              style={{
-                padding: '13px 28px', background: 'var(--accent, #a78bfa)',
-                color: '#fff', border: 'none', borderRadius: 10,
-                fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              Open Fibertuner
-            </button>
-          </div>
-        </div>
-      )
-    }
+  if (error || !session) {
     return (
       <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{error ?? 'Broadcast session not found.'}</h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Ask the host to start a new broadcast session.</p>
+          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Broadcast not found</h2>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>Ask the host to share a new link.</p>
+          <button
+            onClick={() => { window.location.href = `fibertuner://broadcast/${code}` }}
+            style={{
+              padding: '11px 24px', background: 'rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 10, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Open Fibertuner
+          </button>
         </div>
       </div>
     )
   }
-
-  if (!session) return null
 
   const isExpired = new Date(session.expiresAt) < new Date()
+
+  // Expired: show session context so guests know what they missed, plus a reopen CTA
   if (isExpired) {
-    if (deepLinkFired.current) {
-      return (
-        <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ textAlign: 'center' }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Open in Fibertuner</h2>
-            <button
-              onClick={() => { window.location.href = `fibertuner://broadcast/${code}` }}
-              style={{
-                padding: '13px 28px', background: 'var(--accent, #a78bfa)',
-                color: '#fff', border: 'none', borderRadius: 10,
-                fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              Open Fibertuner
-            </button>
-          </div>
-        </div>
-      )
-    }
     return (
-      <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Broadcast Ended</h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>This session has expired.</p>
+      <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16, textAlign: 'center' }}>
+        {artUrl && (
+          <img src={artUrl} alt="" style={{ width: 100, height: 100, borderRadius: 10, objectFit: 'cover', opacity: 0.5 }} />
+        )}
+        <div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Broadcast Ended</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{session.name || `${session.hostName}'s Broadcast`}</h2>
+          {session.currentTrack && (
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 0 }}>
+              Last playing: {session.currentTrack.title} · {session.currentTrack.artist}
+            </p>
+          )}
         </div>
+        <button
+          onClick={() => { window.location.href = `fibertuner://broadcast/${code}` }}
+          style={{
+            marginTop: 8, padding: '11px 24px', background: 'rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 10, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          Open Fibertuner
+        </button>
       </div>
     )
   }
 
-  if (showNameModal && session) {
+  if (showNameModal) {
     return <JoinScreen session={session} artUrl={artUrl} onJoin={handleJoin} />
   }
 
