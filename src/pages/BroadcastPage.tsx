@@ -8,18 +8,27 @@ import type {
 } from '../lib/broadcastTypes'
 
 async function fetchArtworkUrl(artist: string, album: string): Promise<string | null> {
-  try {
-    const q = encodeURIComponent(`${artist} ${album}`)
-    const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=5&media=music`)
-    const data = await res.json()
-    const best = (data.results ?? []).find((r: any) =>
-      r.artistName?.toLowerCase().includes(artist.toLowerCase().split(' ')[0])
-    ) ?? data.results?.[0]
-    if (!best?.artworkUrl100) return null
-    return best.artworkUrl100.replace('100x100bb', '600x600bb')
-  } catch {
-    return null
+  const artistWord = artist.toLowerCase().split(' ')[0]
+  const trySearch = async (term: string): Promise<string | null> => {
+    try {
+      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=album&limit=5&media=music`)
+      const data = await res.json()
+      const best = (data.results ?? []).find((r: any) =>
+        r.artistName?.toLowerCase().includes(artistWord)
+      ) ?? data.results?.[0]
+      return best?.artworkUrl100
+        ? best.artworkUrl100.replace('100x100bb', '600x600bb')
+        : null
+    } catch { return null }
   }
+  // Try artist+album first, fall back to artist alone
+  return (album ? await trySearch(`${artist} ${album}`) : null) ?? await trySearch(artist)
+}
+
+// Returns false for LAN IPs that guests can't reach from outside the home network
+function isPublicUrl(url: string): boolean {
+  if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) return false
+  return !/192\.168\.|\/\/10\.\d+\.|172\.(1[6-9]|2\d|3[01])\./.test(url)
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -667,13 +676,13 @@ export default function BroadcastPage() {
       })
   }, [code])
 
-  // Fetch album art — prefer direct artUrl from broadcast, fall back to MusicBrainz
+  // Fetch album art — use direct artUrl only if it's a public URL; otherwise fall back to iTunes
   useEffect(() => {
     if (!session?.currentTrack) return
     const { artUrl: directArt, artist, album } = session.currentTrack
-    if (directArt) { setArtUrl(directArt); return }
-    if (artist && album) {
-      fetchArtworkUrl(artist, album).then(url => { if (url) setArtUrl(url) })
+    if (directArt && isPublicUrl(directArt)) { setArtUrl(directArt); return }
+    if (artist) {
+      fetchArtworkUrl(artist, album || '').then(url => { if (url) setArtUrl(url) })
     }
   }, [session?.currentTrack?.title])
 
