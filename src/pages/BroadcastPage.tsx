@@ -351,23 +351,25 @@ function ParticipantsStrip({ participants, hostUserId }: { participants: Broadca
 // ── Queue track row ────────────────────────────────────────────────────────────
 
 function QueueRow({
-  track, isCurrentTrack, myUserId, onVote,
+  track, isCurrentTrack, myUserId, onVote, rowRef,
 }: {
   track: BroadcastTrack
   isCurrentTrack: boolean
   myUserId: string
   onVote: (uri: string, vote: 'up' | 'down') => void
+  rowRef?: React.Ref<HTMLDivElement>
 }) {
   const myUp = track.votes.up.includes(myUserId)
   const myDown = track.votes.down.includes(myUserId)
 
   return (
-    <div style={{
+    <div ref={rowRef} style={{
       padding: '10px 0',
       borderBottom: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', alignItems: 'center', gap: 10,
       borderLeft: isCurrentTrack ? '2px solid var(--accent, #a78bfa)' : '2px solid transparent',
       paddingLeft: isCurrentTrack ? 10 : 0,
+      background: isCurrentTrack ? 'rgba(167,139,250,0.05)' : 'transparent',
     }}>
       {track.artUrl ? (
         <img src={track.artUrl} alt="" style={{ width: 38, height: 38, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
@@ -452,6 +454,7 @@ function SearchSection({
 }) {
   const [query, setQuery] = useState('')
   const [drillView, setDrillView] = useState<DrillView>({ kind: 'results' })
+  const [drillHistory, setDrillHistory] = useState<DrillView[]>([])
   const [pendingArtist, setPendingArtist] = useState<BroadcastArtist | null>(null)
   const [pendingAlbum, setPendingAlbum] = useState<BroadcastAlbum | null>(null)
   const [confirmTrack, setConfirmTrack] = useState<BroadcastTrack | null>(null)
@@ -459,13 +462,15 @@ function SearchSection({
   const [recentlyQueued, setRecentlyQueued] = useState<Set<string>>(new Set())
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // When browseResults arrive, advance the drill view
+  // When browseResults arrive, advance the drill view (push current view onto history first)
   useEffect(() => {
     if (!browseResults) return
     if (browseResults.kind === 'albums' && pendingArtist) {
+      setDrillHistory(h => [...h, drillView])
       setDrillView({ kind: 'artist-albums', artist: pendingArtist, albums: browseResults.albums })
       setPendingArtist(null)
     } else if (browseResults.kind === 'tracks' && pendingAlbum) {
+      setDrillHistory(h => [...h, drillView])
       setDrillView({ kind: 'album-tracks', album: pendingAlbum, tracks: browseResults.tracks })
       setPendingAlbum(null)
     }
@@ -475,10 +480,21 @@ function SearchSection({
     const q = e.target.value
     setQuery(q)
     setDrillView({ kind: 'results' })
+    setDrillHistory([])
     setPendingArtist(null)
     setPendingAlbum(null)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => onSearch(q), 300)
+  }
+
+  const handleClear = () => {
+    setQuery('')
+    setDrillView({ kind: 'results' })
+    setDrillHistory([])
+    setPendingArtist(null)
+    setPendingAlbum(null)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    onSearch('')
   }
 
   const flashAdded = (uri: string, set: React.Dispatch<React.SetStateAction<Set<string>>>) => {
@@ -514,14 +530,15 @@ function SearchSection({
   }
 
   const goBack = () => {
-    if (drillView.kind === 'album-tracks') {
-      // Go back to artist albums if we came from there, else back to results
-      setDrillView({ kind: 'results' })
+    setPendingArtist(null)
+    setPendingAlbum(null)
+    if (drillHistory.length > 0) {
+      const prev = drillHistory[drillHistory.length - 1]
+      setDrillHistory(h => h.slice(0, -1))
+      setDrillView(prev)
     } else {
       setDrillView({ kind: 'results' })
     }
-    setPendingArtist(null)
-    setPendingAlbum(null)
   }
 
   const hasResults = searchArtists.length > 0 || searchAlbums.length > 0 || searchResults.length > 0
@@ -562,7 +579,7 @@ function SearchSection({
           onChange={handleInput}
           placeholder="Artists, albums, tracks…"
           style={{
-            width: '100%', padding: '11px 16px',
+            width: '100%', padding: '11px 44px 11px 16px',
             background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10, color: '#fff', fontSize: 16, outline: 'none',
             fontFamily: 'inherit', boxSizing: 'border-box', WebkitAppearance: 'none',
@@ -571,10 +588,34 @@ function SearchSection({
         {(searching || browsing) && (
           <span style={{
             position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-            fontSize: 11, color: 'rgba(255,255,255,0.4)',
+            fontSize: 11, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
           }}>{searching ? 'Searching…' : 'Loading…'}</span>
         )}
+        {query && !searching && !browsing && (
+          <button
+            onClick={handleClear}
+            aria-label="Clear search"
+            style={{
+              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+              background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%',
+              width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1,
+              padding: 0,
+            }}
+          >×</button>
+        )}
       </div>
+
+      {/* Empty state when search completes but has no results */}
+      {drillView.kind === 'results' && query && !searching && !browsing &&
+        searchResults.length === 0 && searchArtists.length === 0 && searchAlbums.length === 0 && (
+        <div style={{
+          textAlign: 'center', padding: '32px 0',
+          color: 'rgba(255,255,255,0.3)', fontSize: 13,
+        }}>
+          No results for <strong style={{ color: 'rgba(255,255,255,0.5)' }}>"{query}"</strong>
+        </div>
+      )}
 
       {/* Confirm duplicate modal */}
       {confirmTrack && (
@@ -648,7 +689,7 @@ function SearchSection({
           {searchArtists.length > 0 && (
             <>
               {sectionHeader('Artists')}
-              {searchArtists.map((artist, i) => (
+              {searchArtists.map((artist) => (
                 <div
                   key={artist.ratingKey}
                   onClick={() => handleArtistClick(artist)}
@@ -677,7 +718,7 @@ function SearchSection({
           {searchAlbums.length > 0 && (
             <>
               {sectionHeader('Albums')}
-              {searchAlbums.map((album, i) => (
+              {searchAlbums.map((album) => (
                 <div
                   key={album.ratingKey}
                   onClick={() => handleAlbumClick(album)}
@@ -855,7 +896,9 @@ export default function BroadcastPage() {
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deepLinkAttempted = useRef(false)
+  const currentTrackRowRef = useRef<HTMLDivElement | null>(null)
 
   // Fetch initial session row
   useEffect(() => {
@@ -935,6 +978,7 @@ export default function BroadcastPage() {
         if (payload.type === 'browse-results') {
           setBrowseResults({ kind: payload.kind, albums: payload.albums, tracks: payload.tracks })
           setBrowsing(false)
+          if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
         }
       })
       .subscribe(async (status) => {
@@ -957,6 +1001,13 @@ export default function BroadcastPage() {
     }, 5000)
     return () => clearInterval(id)
   }, [code, joined])
+
+  // Auto-scroll queue to current track on initial load or track change
+  useEffect(() => {
+    if (!joined || !session?.currentIndex) return
+    const el = currentTrackRowRef.current
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [joined, session?.currentIndex])
 
   const handleJoin = (name: string) => {
     try {
@@ -1023,21 +1074,21 @@ export default function BroadcastPage() {
   const handleBrowseArtist = useCallback((artist: BroadcastArtist) => {
     setBrowsing(true)
     setBrowseResults(null)
+    if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
     const cmd: BroadcastCommand = { type: 'browse-artist', artistRatingKey: artist.ratingKey, requestId, userId: myUserId }
     channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
-    // Timeout fallback
-    setTimeout(() => setBrowsing(false), 10000)
+    browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
   }, [myUserId])
 
   const handleBrowseAlbum = useCallback((album: BroadcastAlbum) => {
     setBrowsing(true)
     setBrowseResults(null)
+    if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
     const cmd: BroadcastCommand = { type: 'browse-album', albumRatingKey: album.ratingKey, requestId, userId: myUserId }
     channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
-    // Timeout fallback
-    setTimeout(() => setBrowsing(false), 10000)
+    browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
   }, [myUserId])
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -1229,6 +1280,7 @@ export default function BroadcastPage() {
                   isCurrentTrack={i === session.currentIndex}
                   myUserId={myUserId}
                   onVote={handleVote}
+                  rowRef={i === session.currentIndex ? currentTrackRowRef : undefined}
                 />
               ))
             )}
