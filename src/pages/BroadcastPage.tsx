@@ -355,7 +355,7 @@ function VoteButtons({
             display: 'flex', alignItems: 'center', minWidth: 36, justifyContent: 'center',
             transition: 'all 0.2s',
           }}
-        >▲</button>
+        >👍</button>
         <span style={{ fontSize: 12, fontWeight: 600, color: net > 0 ? ACCENT : net < 0 ? '#f87171' : TEXT_MUTED, minWidth: 16, textAlign: 'center' }}>
           {net > 0 ? `+${net}` : net !== 0 ? net : '·'}
         </span>
@@ -369,7 +369,7 @@ function VoteButtons({
             display: 'flex', alignItems: 'center', minWidth: 36, justifyContent: 'center',
             transition: 'all 0.2s',
           }}
-        >▼</button>
+        >👎</button>
       </div>
     )
   }
@@ -387,7 +387,7 @@ function VoteButtons({
           transition: 'all 0.2s', fontFamily: FONT,
         }}
       >
-        ▲ <span style={{ fontSize: 15, fontWeight: 700 }}>{track.votes.up.length}</span>
+        👍 <span style={{ fontSize: 15, fontWeight: 700 }}>{track.votes.up.length}</span>
       </button>
       <button
         onClick={() => onVote(track.uri, 'down')}
@@ -400,7 +400,7 @@ function VoteButtons({
           transition: 'all 0.2s', fontFamily: FONT,
         }}
       >
-        ▼ <span style={{ fontSize: 15, fontWeight: 700 }}>{track.votes.down.length}</span>
+        👎 <span style={{ fontSize: 15, fontWeight: 700 }}>{track.votes.down.length}</span>
       </button>
     </div>
   )
