@@ -312,6 +312,105 @@
   white-space: nowrap;
 }
 
+/* ── Sign-in gate ────────────────────────────────────────── */
+.stats-signin {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+}
+
+.stats-signin__card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 16px;
+  padding: 32px 36px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.stats-signin__title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+
+.stats-signin__sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 28px;
+}
+
+.stats-signin__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stats-signin__input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 9px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #fff;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.stats-signin__input:focus {
+  border-color: rgba(255,255,255,0.22);
+}
+
+.stats-signin__input::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.stats-signin__error {
+  font-size: 12px;
+  color: rgba(255,100,100,0.8);
+  padding: 2px 0;
+}
+
+.stats-signin__btn {
+  margin-top: 4px;
+  padding: 11px 14px;
+  border-radius: 9px;
+  border: none;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+
+.stats-signin__btn:hover:not(:disabled) { opacity: 0.85; }
+.stats-signin__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Sign-out button ─────────────────────────────────────── */
+.stats-signout-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.stats-signout-btn:hover {
+  color: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,0.2);
+}
+
 /* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .stats-panel { padding: 48px 20px 60px; }

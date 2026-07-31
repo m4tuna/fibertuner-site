@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import Footer from './components/Footer'
-import StatsPanel from './components/StatsPanel'
 import { supabase } from './lib/supabase'
 import './styles/downloads.css'
 
@@ -54,7 +53,6 @@ export default function DownloadsPage() {
   const detectedPlatform      = detectPlatform()
   const params                = new URLSearchParams(window.location.search)
   const isSuccess             = params.has('success')
-  const isAdmin               = window.location.hostname === 'localhost' && params.has('stats')
   const serverParam           = params.get('server')
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null)
 
@@ -79,21 +77,6 @@ export default function DownloadsPage() {
         }
       })
   }, [serverParam])
-
-  if (isAdmin) {
-    return (
-      <div className="downloads">
-        <header className="site-header">
-          <a href="/" className="site-header__logo">Fibertuner</a>
-          <a href="/downloads" className="site-header__link">← Downloads</a>
-        </header>
-        <div className="downloads__stats-body">
-          <StatsPanel />
-        </div>
-        <Footer appName="Fibertuner" githubRepo={GITHUB} />
-      </div>
-    )
-  }
 
   return (
     <div className="downloads">
