@@ -678,7 +678,7 @@ function SearchOverlay({
       position: 'fixed', inset: 0, zIndex: 100,
       background: BG,
       display: 'flex', flexDirection: 'column',
-      fontFamily: FONT,
+      fontFamily: FONT, overflowX: 'hidden',
     }}>
       {/* Header */}
       <div style={{
@@ -1053,6 +1053,16 @@ function SearchOverlay({
 export default function BroadcastPage() {
   const code = extractCode()
 
+  // Bug 1 fix: prevent horizontal scroll on mobile
+  useEffect(() => {
+    document.body.style.overflowX = 'hidden'
+    document.documentElement.style.overflowX = 'hidden'
+    return () => {
+      document.body.style.overflowX = ''
+      document.documentElement.style.overflowX = ''
+    }
+  }, [])
+
   const [session, setSession] = useState<BroadcastSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -1087,6 +1097,8 @@ export default function BroadcastPage() {
   // Queue of commands waiting to be sent once the channel is SUBSCRIBED
   const pendingSendQueue = useRef<BroadcastCommand[]>([])
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSearchQueryRef = useRef<string>('')
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deepLinkAttempted = useRef(false)
 
@@ -1158,7 +1170,9 @@ export default function BroadcastPage() {
           setSearchPlaylists((payload as any).playlists ?? [])
           setBrowseResults(null)
           setSearching(false)
+          lastSearchQueryRef.current = ''
           if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+          if (searchRetryRef.current) clearTimeout(searchRetryRef.current)
         }
         if (payload.type === 'browse-results') {
           setBrowseResults({ kind: payload.kind, albums: payload.albums, tracks: payload.tracks })
@@ -1219,6 +1233,8 @@ export default function BroadcastPage() {
     setBrowseResults(null)
     setSearching(false)
     setBrowsing(false)
+    lastSearchQueryRef.current = ''
+    if (searchRetryRef.current) clearTimeout(searchRetryRef.current)
   }, [])
 
   // Escape key closes search overlay
@@ -1228,18 +1244,15 @@ export default function BroadcastPage() {
     return () => window.removeEventListener('keydown', handler)
   }, [closeSearch])
 
-  // Safe send — sends immediately when SUBSCRIBED; queues search/browse requests
+  // Safe send — sends immediately when SUBSCRIBED; queues all commands
   // if the channel isn't ready yet so they're not silently dropped.
   const safeSend = useCallback((payload: BroadcastCommand) => {
     if (channelRef.current && channelSubscribedRef.current) {
       channelRef.current.send({ type: 'broadcast', event: 'command', payload }).catch(() => {})
-    } else if (
-      payload.type === 'search-request' ||
-      payload.type === 'browse-artist' ||
-      payload.type === 'browse-album' ||
-      payload.type === 'browse-playlist'
-    ) {
-      // Queue the request — will be flushed once SUBSCRIBED fires
+    } else {
+      // Queue the command — will be flushed once SUBSCRIBED fires.
+      // This covers votes, search-requests, browse-requests and add/play-next
+      // sent before the channel handshake completes.
       pendingSendQueue.current.push(payload)
     }
   }, [])
@@ -1280,6 +1293,8 @@ export default function BroadcastPage() {
       setSearchPlaylists([])
       setBrowseResults(null)
       setSearching(false)
+      lastSearchQueryRef.current = ''
+      if (searchRetryRef.current) clearTimeout(searchRetryRef.current)
       return
     }
     setSearching(true)
@@ -1289,9 +1304,18 @@ export default function BroadcastPage() {
     setSearchPlaylists([])
     setBrowseResults(null)
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    if (searchRetryRef.current) clearTimeout(searchRetryRef.current)
+    lastSearchQueryRef.current = query.trim()
     const requestId = Math.random().toString(36).slice(2)
     safeSend({ type: 'search-request', query: query.trim(), requestId, userId: myUserId })
-    searchTimeoutRef.current = setTimeout(() => setSearching(false), 10000)
+    // Retry once after 3s in case the host channel wasn't ready on the first attempt
+    searchRetryRef.current = setTimeout(() => {
+      if (lastSearchQueryRef.current === query.trim()) {
+        const retryId = Math.random().toString(36).slice(2)
+        safeSend({ type: 'search-request', query: query.trim(), requestId: retryId, userId: myUserId })
+      }
+    }, 3000)
+    searchTimeoutRef.current = setTimeout(() => setSearching(false), 12000)
   }, [myUserId, safeSend])
 
   const handleBrowseArtist = useCallback((artist: BroadcastArtist) => {
@@ -1325,7 +1349,7 @@ export default function BroadcastPage() {
 
   const pageStyle: React.CSSProperties = {
     minHeight: '100vh', background: BG, color: TEXT_PRIMARY,
-    fontFamily: FONT, position: 'relative',
+    fontFamily: FONT, position: 'relative', overflowX: 'hidden',
   }
 
   if (!code) {
@@ -1409,7 +1433,7 @@ export default function BroadcastPage() {
           50% { opacity: 0.5; transform: scale(0.85); }
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: ${BG}; }
+        html, body { background: ${BG}; overflow-x: hidden; max-width: 100%; }
       `}</style>
 
       {/* Search overlay (full-screen, above everything) */}
