@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa'
 import { supabase } from '../lib/supabase'
 import { fetchAlbumArt } from '../lib/albumArt'
 import type {
@@ -350,12 +351,13 @@ function VoteButtons({
           style={{
             background: myUp ? `rgba(229,160,13,0.2)` : 'transparent',
             border: 'none',
-            color: myUp ? ACCENT : TEXT_MUTED,
-            borderRadius: 6, padding: '6px 8px', fontSize: 13, cursor: 'pointer',
+            borderRadius: 6, padding: '6px 8px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', minWidth: 36, justifyContent: 'center',
             transition: 'all 0.2s',
           }}
-        >👍</button>
+        >
+          <FaThumbsUp style={{ color: myUp ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
+        </button>
         <span style={{ fontSize: 12, fontWeight: 600, color: net > 0 ? ACCENT : net < 0 ? '#f87171' : TEXT_MUTED, minWidth: 16, textAlign: 'center' }}>
           {net > 0 ? `+${net}` : net !== 0 ? net : '·'}
         </span>
@@ -364,12 +366,13 @@ function VoteButtons({
           style={{
             background: myDown ? 'rgba(248,113,113,0.15)' : 'transparent',
             border: 'none',
-            color: myDown ? '#f87171' : TEXT_MUTED,
-            borderRadius: 6, padding: '6px 8px', fontSize: 13, cursor: 'pointer',
+            borderRadius: 6, padding: '6px 8px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', minWidth: 36, justifyContent: 'center',
             transition: 'all 0.2s',
           }}
-        >👎</button>
+        >
+          <FaThumbsDown style={{ color: myDown ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
+        </button>
       </div>
     )
   }
@@ -381,26 +384,26 @@ function VoteButtons({
         style={{
           background: myUp ? `rgba(229,160,13,0.15)` : SURFACE,
           border: myUp ? `1px solid rgba(229,160,13,0.4)` : `1px solid ${BORDER}`,
-          color: myUp ? ACCENT : TEXT_SECONDARY,
-          borderRadius: 12, padding: '12px 28px', fontSize: 20, cursor: 'pointer',
+          borderRadius: 12, padding: '12px 28px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 8, minHeight: 48,
           transition: 'all 0.2s', fontFamily: FONT,
         }}
       >
-        👍 <span style={{ fontSize: 15, fontWeight: 700 }}>{track.votes.up.length}</span>
+        <FaThumbsUp style={{ color: myUp ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
+        <span style={{ fontSize: 15, fontWeight: 700, color: myUp ? ACCENT : TEXT_SECONDARY }}>{track.votes.up.length}</span>
       </button>
       <button
         onClick={() => onVote(track.uri, 'down')}
         style={{
           background: myDown ? 'rgba(248,113,113,0.12)' : SURFACE,
           border: myDown ? '1px solid rgba(248,113,113,0.35)' : `1px solid ${BORDER}`,
-          color: myDown ? '#f87171' : TEXT_SECONDARY,
-          borderRadius: 12, padding: '12px 28px', fontSize: 20, cursor: 'pointer',
+          borderRadius: 12, padding: '12px 28px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 8, minHeight: 48,
           transition: 'all 0.2s', fontFamily: FONT,
         }}
       >
-        👎 <span style={{ fontSize: 15, fontWeight: 700 }}>{track.votes.down.length}</span>
+        <FaThumbsDown style={{ color: myDown ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
+        <span style={{ fontSize: 15, fontWeight: 700, color: myDown ? '#f87171' : TEXT_SECONDARY }}>{track.votes.down.length}</span>
       </button>
     </div>
   )
@@ -1163,7 +1166,9 @@ export default function BroadcastPage() {
         setParticipants(Object.values(state).flat())
       })
       .on('broadcast', { event: 'command' }, ({ payload }: { payload: BroadcastCommand }) => {
+        console.error('[broadcast] received command from host:', payload.type, payload)
         if (payload.type === 'search-results') {
+          console.error('[broadcast] received search-results', payload)
           setSearchResults(payload.results)
           setSearchArtists((payload as any).artists ?? [])
           setSearchAlbums((payload as any).albums ?? [])
@@ -1203,15 +1208,42 @@ export default function BroadcastPage() {
     }
   }, [code, joined, myUserId, myDisplayName])
 
-  // Polling fallback for track/queue state
+  // Polling fallback for track/queue state.
+  // IMPORTANT: merge incoming queue data with the local userVote state rather than
+  // replacing it wholesale. Without this merge, the optimistic vote update in
+  // handleVote gets wiped on the very next poll cycle (~5s later), which is exactly
+  // the "highlights then reverts" symptom. We keep the polled vote arrays from
+  // Supabase (which reflect all other guests' votes) but we re-assert our own userId
+  // in whichever direction we locally voted, so our highlight is never erased by a poll.
   useEffect(() => {
     if (!code || !joined) return
     const id = setInterval(async () => {
       const { data } = await supabase.from('broadcast_sessions').select('*').eq('code', code).single()
-      if (data) setSession(rowToSession(data as Record<string, unknown>))
+      if (!data) return
+      setSession(prev => {
+        const incoming = rowToSession(data as Record<string, unknown>)
+        if (!prev) return incoming
+        // For each track in the incoming queue, preserve the local user's vote
+        // if they have one — the DB may lag behind by one poll cycle.
+        const mergedQueue = incoming.queue.map(incomingTrack => {
+          const localTrack = prev.queue.find(t => t.uri === incomingTrack.uri)
+          if (!localTrack) return incomingTrack
+          // Determine what the local user voted (from previous local state)
+          const localVotedUp = localTrack.votes.up.includes(myUserId)
+          const localVotedDown = localTrack.votes.down.includes(myUserId)
+          if (!localVotedUp && !localVotedDown) return incomingTrack
+          // Re-assert local vote on top of the DB's vote arrays
+          let up = incomingTrack.votes.up.filter((id: string) => id !== myUserId)
+          let down = incomingTrack.votes.down.filter((id: string) => id !== myUserId)
+          if (localVotedUp) up = [...up, myUserId]
+          if (localVotedDown) down = [...down, myUserId]
+          return { ...incomingTrack, votes: { up, down } }
+        })
+        return { ...incoming, queue: mergedQueue }
+      })
     }, 5000)
     return () => clearInterval(id)
-  }, [code, joined])
+  }, [code, joined, myUserId])
 
   const handleJoin = (name: string) => {
     try {
@@ -1248,11 +1280,15 @@ export default function BroadcastPage() {
   // if the channel isn't ready yet so they're not silently dropped.
   const safeSend = useCallback((payload: BroadcastCommand) => {
     if (channelRef.current && channelSubscribedRef.current) {
-      channelRef.current.send({ type: 'broadcast', event: 'command', payload }).catch(() => {})
+      console.error('[broadcast] safeSend — channel SUBSCRIBED, sending:', payload.type, payload, 'channel subscribed:', channelSubscribedRef.current)
+      channelRef.current.send({ type: 'broadcast', event: 'command', payload }).catch((err) => {
+        console.error('[broadcast] safeSend send() failed:', err)
+      })
     } else {
       // Queue the command — will be flushed once SUBSCRIBED fires.
       // This covers votes, search-requests, browse-requests and add/play-next
       // sent before the channel handshake completes.
+      console.error('[broadcast] safeSend — channel NOT ready, queuing:', payload.type, 'channelRef:', !!channelRef.current, 'subscribed:', channelSubscribedRef.current)
       pendingSendQueue.current.push(payload)
     }
   }, [])
@@ -1307,6 +1343,7 @@ export default function BroadcastPage() {
     if (searchRetryRef.current) clearTimeout(searchRetryRef.current)
     lastSearchQueryRef.current = query.trim()
     const requestId = Math.random().toString(36).slice(2)
+    console.error('[broadcast] sending search-request', { query: query.trim(), requestId }, 'channel subscribed:', channelSubscribedRef.current)
     safeSend({ type: 'search-request', query: query.trim(), requestId, userId: myUserId })
     // Retry once after 3s in case the host channel wasn't ready on the first attempt
     searchRetryRef.current = setTimeout(() => {
