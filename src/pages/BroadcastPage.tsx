@@ -30,10 +30,6 @@ function formatDuration(ms: number): string {
   return formatTime(ms / 1000)
 }
 
-function getInitials(name: string): string {
-  return name.split(' ').slice(0, 2).map(p => p[0] ?? '').join('').toUpperCase() || '?'
-}
-
 function randomUserId(): string {
   return `guest-${Math.random().toString(36).slice(2, 10)}`
 }
@@ -300,34 +296,111 @@ function ProgressBar({ session }: { session: BroadcastSession }) {
   )
 }
 
-// ── Participants strip ─────────────────────────────────────────────────────────
+// ── Listeners drawer ──────────────────────────────────────────────────────────
 
-function ParticipantsStrip({ participants, hostUserId }: { participants: BroadcastParticipant[]; hostUserId: string }) {
-  if (!participants.length) return null
+function ListenersDrawer({
+  participants,
+  myUserId,
+  onClose,
+}: {
+  participants: BroadcastParticipant[]
+  myUserId: string
+  onClose: () => void
+}) {
   return (
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none', marginBottom: 16 }}>
-      {participants.map(p => (
-        <div key={p.userId} style={{
-          display: 'flex', alignItems: 'center', gap: 5,
-          background: SURFACE, borderRadius: 20,
-          padding: '4px 9px', flexShrink: 0, fontSize: 11,
-          border: p.userId === hostUserId ? `1px solid rgba(229,160,13,0.35)` : `1px solid ${BORDER}`,
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(4px)',
+          WebkitBackdropFilter: 'blur(4px)',
+        }}
+      />
+      {/* Drawer panel */}
+      <div style={{
+        position: 'fixed', top: 0, right: 0, bottom: 0,
+        width: 'min(280px, 100vw)',
+        zIndex: 201,
+        background: 'rgba(18,18,18,0.97)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderLeft: `1px solid ${BORDER}`,
+        display: 'flex', flexDirection: 'column',
+        fontFamily: FONT,
+        animation: 'drawerSlideIn 0.22s ease-out',
+      }}>
+        {/* Drawer header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '18px 18px 14px',
+          borderBottom: `1px solid ${BORDER}`,
+          flexShrink: 0,
         }}>
-          <div style={{
-            width: 20, height: 20, borderRadius: '50%',
-            background: p.userId === hostUserId ? `rgba(229,160,13,0.2)` : 'rgba(255,255,255,0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 8, fontWeight: 700, color: p.userId === hostUserId ? ACCENT : TEXT_SECONDARY,
-          }}>
-            {getInitials(p.displayName)}
-          </div>
-          <span style={{ color: TEXT_SECONDARY }}>{p.displayName}</span>
-          {p.isHost && (
-            <span style={{ fontSize: 9, fontWeight: 700, color: ACCENT, letterSpacing: '0.04em', textTransform: 'uppercase' }}>HOST</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: TEXT_PRIMARY }}>
+            Listeners ({participants.length})
+          </span>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%',
+              width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: TEXT_SECONDARY, fontSize: 16, lineHeight: 1,
+              fontFamily: FONT,
+            }}
+            aria-label="Close"
+          >✕</button>
+        </div>
+
+        {/* Participant list */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', scrollbarWidth: 'thin' }}>
+          {participants.length === 0 ? (
+            <div style={{ textAlign: 'center', paddingTop: 32, color: TEXT_MUTED, fontSize: 13 }}>
+              No listeners yet
+            </div>
+          ) : (
+            participants.map(p => (
+              <div key={p.userId} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 6px',
+                borderBottom: `1px solid rgba(255,255,255,0.04)`,
+              }}>
+                {/* Avatar circle */}
+                <div style={{
+                  width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                  background: ACCENT,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 700, color: '#111',
+                  border: p.isHost ? `2px solid rgba(229,160,13,0.8)` : '2px solid transparent',
+                }}>
+                  {(p.displayName[0] ?? '?').toUpperCase()}
+                </div>
+                {/* Name */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{
+                    fontSize: 13, fontWeight: 500, color: TEXT_PRIMARY,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    display: 'block',
+                  }}>
+                    {p.displayName}
+                    {p.userId === myUserId && (
+                      <span style={{ fontSize: 11, color: TEXT_MUTED, fontWeight: 400 }}> (you)</span>
+                    )}
+                  </span>
+                  {p.isHost && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                      host
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
           )}
         </div>
-      ))}
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -525,7 +598,7 @@ function SearchOverlay({
   browseResults,
   searching,
   browsing,
-  myDisplayName,
+  myDisplayName: _myDisplayName,
   queue,
 }: {
   onClose: () => void
@@ -1239,6 +1312,7 @@ export default function BroadcastPage() {
   const [showNameModal, setShowNameModal] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showListenersDrawer, setShowListenersDrawer] = useState(false)
   const [artUrl, setArtUrl] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<BroadcastTrack[]>([])
   const [searchArtists, setSearchArtists] = useState<BroadcastArtist[]>([])
@@ -1691,6 +1765,10 @@ export default function BroadcastPage() {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.5; transform: scale(0.85); }
         }
+        @keyframes drawerSlideIn {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { background: ${BG}; overflow-x: hidden; max-width: 100%; }
       `}</style>
@@ -1698,6 +1776,15 @@ export default function BroadcastPage() {
       {/* Share modal */}
       {showShareModal && (
         <ShareModal code={code} onClose={() => setShowShareModal(false)} />
+      )}
+
+      {/* Listeners drawer */}
+      {showListenersDrawer && (
+        <ListenersDrawer
+          participants={participants}
+          myUserId={myUserId}
+          onClose={() => setShowListenersDrawer(false)}
+        />
       )}
 
       {/* Search overlay (full-screen, above everything) */}
@@ -1733,27 +1820,43 @@ export default function BroadcastPage() {
             flexShrink: 0,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-              <div style={{
-                width: 7, height: 7, borderRadius: '50%',
-                background: session.state === 'playing' ? ACCENT : 'rgba(255,255,255,0.2)',
-                boxShadow: session.state === 'playing' ? `0 0 8px ${ACCENT}` : 'none',
-                flexShrink: 0,
-                animation: session.state === 'playing' ? 'livePulse 2s ease-in-out infinite' : 'none',
-              }} />
+              {/* Clickable LIVE + listener count */}
+              <button
+                onClick={() => setShowListenersDrawer(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  flexShrink: 0,
+                }}
+                aria-label="Show listeners"
+              >
+                <div style={{
+                  width: 7, height: 7, borderRadius: '50%',
+                  background: session.state === 'playing' ? '#ef4444' : 'rgba(255,255,255,0.2)',
+                  boxShadow: session.state === 'playing' ? '0 0 8px #ef4444' : 'none',
+                  animation: session.state === 'playing' ? 'livePulse 2s ease-in-out infinite' : 'none',
+                }} />
+                {session.state === 'playing' && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, color: '#ef4444',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>LIVE</span>
+                )}
+                {participants.length > 0 && (
+                  <span style={{ fontSize: 11, color: TEXT_MUTED, fontWeight: 500 }}>
+                    {participants.length} {participants.length === 1 ? 'listener' : 'listeners'}
+                  </span>
+                )}
+              </button>
               <span style={{
                 fontSize: 13, fontWeight: 600, color: TEXT_SECONDARY,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>
+                cursor: 'pointer',
+              }}
+                onClick={() => setShowListenersDrawer(true)}
+              >
                 {session.name || session.hostName}
               </span>
-              {session.state === 'playing' && (
-                <span style={{
-                  fontSize: 9, fontWeight: 700, color: ACCENT,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                  background: `rgba(229,160,13,0.12)`, border: `1px solid rgba(229,160,13,0.25)`,
-                  borderRadius: 10, padding: '2px 7px', flexShrink: 0,
-                }}>LIVE</span>
-              )}
             </div>
             <button
               onClick={() => setShowShareModal(true)}
@@ -1842,13 +1945,6 @@ export default function BroadcastPage() {
               />
             )}
           </div>
-
-          {/* ── Participants ───────────────────────────────────────────────── */}
-          {participants.length > 0 && (
-            <div style={{ padding: '16px 20px 0' }}>
-              <ParticipantsStrip participants={participants} hostUserId={session.hostUserId} />
-            </div>
-          )}
 
           {/* ── Search bar (tappable pill) ─────────────────────────────────── */}
           <div style={{ padding: '12px 20px 4px', flexShrink: 0 }}>
