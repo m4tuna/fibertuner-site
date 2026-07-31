@@ -43,11 +43,13 @@ function getSavedName(): string | null {
 }
 
 function isSessionEnded(session: BroadcastSession): boolean {
+  // Explicitly expired — stopBroadcast sets expires_at to 1 second in the past.
   if (new Date(session.expiresAt) < new Date()) return true
-  if (session.state === 'stopped') {
-    const staleSecs = (Date.now() - new Date(session.updatedAt).getTime()) / 1000
-    if (staleSecs > 120) return true
-  }
+  // Stale heartbeat — the host pushes an update every ~5s while active.
+  // If updatedAt is older than 90s the host is gone (crashed / quit without
+  // stopping), so treat the session as ended regardless of play state.
+  const staleSecs = (Date.now() - new Date(session.updatedAt).getTime()) / 1000
+  if (staleSecs > 90) return true
   return false
 }
 
@@ -1263,6 +1265,10 @@ export default function BroadcastPage() {
   const channelSubscribedRef = useRef(false)
   // Queue of commands waiting to be sent once the channel is SUBSCRIBED
   const pendingSendQueue = useRef<BroadcastCommand[]>([])
+  // Upvote counts keyed by track URI — stored outside session state so polls
+  // never overwrite what the user has tapped. The poll merge uses Math.max
+  // against this ref to guarantee the displayed count never goes backward.
+  const localUpvotesRef = useRef<Map<string, number>>(new Map())
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSearchQueryRef = useRef<string>('')
@@ -1380,9 +1386,19 @@ export default function BroadcastPage() {
     if (!code || !joined) return
     const id = setInterval(async () => {
       const { data } = await supabase.from('broadcast_sessions').select('*').eq('code', code).single()
-      if (!data) return
+      // Missing row → treat as ended (host deleted it)
+      if (!data) {
+        setSession(prev => prev ? { ...prev, state: 'stopped', expiresAt: new Date(0).toISOString() } : prev)
+        return
+      }
+      const incoming = rowToSession(data as Record<string, unknown>)
+      // Session ended (explicit stop or stale heartbeat) — update state so the
+      // render immediately shows the ended view; no need to merge vote data.
+      if (isSessionEnded(incoming)) {
+        setSession(incoming)
+        return
+      }
       setSession(prev => {
-        const incoming = rowToSession(data as Record<string, unknown>)
         if (!prev) return incoming
         // For each track in the incoming queue, preserve the local user's downvote
         // if they have one — the DB may lag behind by one poll cycle.
