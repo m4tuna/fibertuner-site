@@ -68,6 +68,17 @@ function rowToSession(row: Record<string, unknown>): BroadcastSession {
   }
 }
 
+// ── Shared styles ─────────────────────────────────────────────────────────────
+
+const ACCENT = '#e5a00d'
+const BG = '#0d0d0d'
+const SURFACE = 'rgba(255,255,255,0.05)'
+const BORDER = 'rgba(255,255,255,0.08)'
+const TEXT_PRIMARY = '#ffffff'
+const TEXT_SECONDARY = 'rgba(255,255,255,0.5)'
+const TEXT_MUTED = 'rgba(255,255,255,0.28)'
+const FONT = '-apple-system, "SF Pro Display", "Helvetica Neue", sans-serif'
+
 // ── Join screen ────────────────────────────────────────────────────────────────
 
 function JoinScreen({
@@ -88,82 +99,82 @@ function JoinScreen({
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0a0a0a', color: '#fff',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
+      minHeight: '100vh', background: BG, color: TEXT_PRIMARY,
+      fontFamily: FONT,
       display: 'flex', flexDirection: 'column',
     }}>
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', maxHeight: 280, overflow: 'hidden', flexShrink: 0 }}>
+      {/* Blurred art header */}
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', maxHeight: 260, overflow: 'hidden', flexShrink: 0 }}>
         {artUrl ? (
           <>
-            <img
-              src={artUrl} alt=""
-              style={{
-                position: 'absolute', inset: 0, width: '100%', height: '100%',
-                objectFit: 'cover', filter: 'blur(28px) saturate(120%) brightness(0.45)',
-                transform: 'scale(1.1)',
-              }}
-            />
-            <img
-              src={artUrl} alt={session.currentTrack?.album ?? ''}
-              style={{
-                position: 'relative', zIndex: 1,
-                display: 'block', margin: '0 auto',
-                height: '100%', width: 'auto', maxWidth: '100%',
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.7))',
-              }}
-            />
+            <img src={artUrl} alt="" style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'cover', filter: 'blur(28px) saturate(120%) brightness(0.35)',
+              transform: 'scale(1.1)',
+            }} />
+            <img src={artUrl} alt={session.currentTrack?.album ?? ''} style={{
+              position: 'relative', zIndex: 1,
+              display: 'block', margin: '0 auto',
+              height: '100%', width: 'auto', maxWidth: '100%',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.7))',
+            }} />
           </>
         ) : (
           <div style={{
             width: '100%', height: '100%',
-            background: 'linear-gradient(135deg, rgba(167,139,250,0.15) 0%, rgba(0,0,0,0) 70%)',
+            background: 'linear-gradient(135deg, rgba(229,160,13,0.1) 0%, rgba(0,0,0,0) 70%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5">
               <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
             </svg>
           </div>
         )}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, zIndex: 2,
-          background: 'linear-gradient(to bottom, transparent, #0a0a0a)',
+          background: `linear-gradient(to bottom, transparent, ${BG})`,
         }} />
       </div>
 
       <div style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 20px', paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box' }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, marginTop: 4 }}>
+        {/* LIVE badge + host */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, marginTop: 4 }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 5,
-            background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)',
+            background: 'rgba(229,160,13,0.12)', border: `1px solid rgba(229,160,13,0.3)`,
             borderRadius: 20, padding: '3px 9px',
           }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#4ade80', letterSpacing: '0.08em' }}>LIVE</span>
+            <div style={{
+              width: 6, height: 6, borderRadius: '50%', background: ACCENT,
+              boxShadow: `0 0 6px ${ACCENT}`,
+              animation: 'livePulse 2s ease-in-out infinite',
+            }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT, letterSpacing: '0.08em' }}>LIVE</span>
           </div>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
-            hosted by <strong style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{session.hostName}</strong>
+          <span style={{ fontSize: 10, color: TEXT_MUTED, letterSpacing: '0.04em' }}>
+            hosted by <strong style={{ color: TEXT_SECONDARY, fontWeight: 600 }}>{session.hostName}</strong>
           </span>
         </div>
 
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20, lineHeight: 1.2, color: '#fff' }}>{sessionTitle}</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20, lineHeight: 1.2 }}>{sessionTitle}</h1>
 
         {session.currentTrack && (
           <div style={{
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+            background: SURFACE, border: `1px solid ${BORDER}`,
             borderRadius: 12, padding: '12px 14px', marginBottom: 12,
           }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: TEXT_MUTED, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
               Now Playing
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {artUrl && <img src={artUrl} alt="" style={{ width: 40, height: 40, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />}
+              {artUrl && <img src={artUrl} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {session.currentTrack.title}
                 </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: 12, color: TEXT_SECONDARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {session.currentTrack.artist}
                   {session.currentTrack.album ? ` · ${session.currentTrack.album}` : ''}
                 </div>
@@ -174,10 +185,10 @@ function JoinScreen({
 
         {upNext.length > 0 && (
           <div style={{
-            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(255,255,255,0.02)', border: `1px solid rgba(255,255,255,0.06)`,
             borderRadius: 12, padding: '12px 14px', marginBottom: 20,
           }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: TEXT_MUTED, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
               Up Next
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -190,7 +201,7 @@ function JoinScreen({
                   )}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.artist}</div>
+                    <div style={{ fontSize: 11, color: TEXT_MUTED, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.artist}</div>
                   </div>
                 </div>
               ))}
@@ -198,7 +209,7 @@ function JoinScreen({
           </div>
         )}
 
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT_SECONDARY, marginBottom: 10 }}>
           What should we call you?
         </div>
         <input
@@ -210,9 +221,9 @@ function JoinScreen({
           maxLength={30}
           style={{
             width: '100%', padding: '13px 16px',
-            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.13)',
-            borderRadius: 10, color: '#fff', fontSize: 16, outline: 'none',
-            fontFamily: 'inherit', marginBottom: 12, boxSizing: 'border-box',
+            background: 'rgba(255,255,255,0.07)', border: `1px solid ${BORDER}`,
+            borderRadius: 10, color: TEXT_PRIMARY, fontSize: 16, outline: 'none',
+            fontFamily: FONT, marginBottom: 12, boxSizing: 'border-box',
             WebkitAppearance: 'none',
           }}
         />
@@ -221,11 +232,11 @@ function JoinScreen({
           disabled={!name.trim()}
           style={{
             width: '100%', padding: '14px 0',
-            background: name.trim() ? 'var(--accent, #a78bfa)' : 'rgba(255,255,255,0.08)',
-            color: name.trim() ? '#fff' : 'rgba(255,255,255,0.25)',
-            borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 600,
-            cursor: name.trim() ? 'pointer' : 'default', fontFamily: 'inherit',
-            transition: 'background 0.15s',
+            background: name.trim() ? ACCENT : 'rgba(255,255,255,0.08)',
+            color: name.trim() ? '#000' : TEXT_MUTED,
+            borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 700,
+            cursor: name.trim() ? 'pointer' : 'default', fontFamily: FONT,
+            transition: 'background 0.2s',
           }}
         >
           Join Broadcast
@@ -236,7 +247,7 @@ function JoinScreen({
             onClick={() => { window.location.href = `fibertuner://broadcast/${session.code}` }}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 12, color: 'rgba(255,255,255,0.3)', fontFamily: 'inherit',
+              fontSize: 12, color: TEXT_MUTED, fontFamily: FONT,
               textDecoration: 'underline', textUnderlineOffset: 3,
             }}
           >
@@ -248,39 +259,7 @@ function JoinScreen({
   )
 }
 
-// ── Smart app banner ───────────────────────────────────────────────────────────
-
-function AppBanner({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <div style={{
-      background: 'rgba(255,255,255,0.07)',
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
-      padding: '10px 16px',
-      display: 'flex', alignItems: 'center', gap: 12,
-    }}>
-      <img src="/favicon.png" alt="" style={{ width: 32, height: 32, borderRadius: 8 }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600 }}>Fibertuner</div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Better experience in the app</div>
-      </div>
-      <a
-        href="https://fibertuner.com"
-        style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent, #a78bfa)', textDecoration: 'none', whiteSpace: 'nowrap' }}
-      >
-        Get App →
-      </a>
-      <button
-        onClick={onDismiss}
-        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 18, padding: '0 4px', lineHeight: 1 }}
-        aria-label="Dismiss"
-      >
-        ×
-      </button>
-    </div>
-  )
-}
-
-// ── Now-playing progress bar ───────────────────────────────────────────────────
+// ── Progress bar ───────────────────────────────────────────────────────────────
 
 function ProgressBar({ session }: { session: BroadcastSession }) {
   const [displaySec, setDisplaySec] = useState(session.positionSec)
@@ -302,17 +281,17 @@ function ProgressBar({ session }: { session: BroadcastSession }) {
   const pct = dur > 0 ? Math.min(displaySec / dur, 1) * 100 : 0
 
   return (
-    <div style={{ marginTop: 16 }}>
-      <div style={{ height: 3, background: 'rgba(255,255,255,0.12)', borderRadius: 2, position: 'relative' }}>
+    <div style={{ marginTop: 12 }}>
+      <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 2, position: 'relative' }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0,
-          width: `${pct}%`, background: 'var(--accent, #a78bfa)',
+          width: `${pct}%`, background: ACCENT,
           borderRadius: 2, transition: 'width 0.1s linear',
         }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{formatTime(displaySec)}</span>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{formatDuration(session.currentTrack?.durationMs ?? 0)}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+        <span style={{ fontSize: 11, color: TEXT_MUTED }}>{formatTime(displaySec)}</span>
+        <span style={{ fontSize: 11, color: TEXT_MUTED }}>{formatDuration(session.currentTrack?.durationMs ?? 0)}</span>
       </div>
     </div>
   )
@@ -323,25 +302,25 @@ function ProgressBar({ session }: { session: BroadcastSession }) {
 function ParticipantsStrip({ participants, hostUserId }: { participants: BroadcastParticipant[]; hostUserId: string }) {
   if (!participants.length) return null
   return (
-    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none', marginBottom: 16 }}>
       {participants.map(p => (
         <div key={p.userId} style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: 'rgba(255,255,255,0.07)', borderRadius: 20,
-          padding: '4px 10px', flexShrink: 0, fontSize: 12,
-          border: p.userId === hostUserId ? '1px solid rgba(167,139,250,0.4)' : '1px solid transparent',
+          display: 'flex', alignItems: 'center', gap: 5,
+          background: SURFACE, borderRadius: 20,
+          padding: '4px 9px', flexShrink: 0, fontSize: 11,
+          border: p.userId === hostUserId ? `1px solid rgba(229,160,13,0.35)` : `1px solid ${BORDER}`,
         }}>
           <div style={{
-            width: 22, height: 22, borderRadius: '50%',
-            background: 'rgba(167,139,250,0.3)',
+            width: 20, height: 20, borderRadius: '50%',
+            background: p.userId === hostUserId ? `rgba(229,160,13,0.2)` : 'rgba(255,255,255,0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 9, fontWeight: 700, color: '#a78bfa',
+            fontSize: 8, fontWeight: 700, color: p.userId === hostUserId ? ACCENT : TEXT_SECONDARY,
           }}>
             {getInitials(p.displayName)}
           </div>
-          <span style={{ color: 'rgba(255,255,255,0.8)' }}>{p.displayName}</span>
+          <span style={{ color: TEXT_SECONDARY }}>{p.displayName}</span>
           {p.isHost && (
-            <span style={{ fontSize: 9, fontWeight: 700, color: '#a78bfa', letterSpacing: '0.05em', textTransform: 'uppercase' }}>HOST</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: ACCENT, letterSpacing: '0.04em', textTransform: 'uppercase' }}>HOST</span>
           )}
         </div>
       ))}
@@ -349,75 +328,133 @@ function ParticipantsStrip({ participants, hostUserId }: { participants: Broadca
   )
 }
 
-// ── Queue track row ────────────────────────────────────────────────────────────
+// ── Vote buttons (reusable) ────────────────────────────────────────────────────
+
+function VoteButtons({
+  track, myUserId, onVote, compact = false,
+}: {
+  track: BroadcastTrack
+  myUserId: string
+  onVote: (uri: string, vote: 'up' | 'down') => void
+  compact?: boolean
+}) {
+  const myUp = track.votes.up.includes(myUserId)
+  const myDown = track.votes.down.includes(myUserId)
+  const net = track.votes.up.length - track.votes.down.length
+
+  if (compact) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+        <button
+          onClick={e => { e.stopPropagation(); onVote(track.uri, 'up') }}
+          style={{
+            background: myUp ? `rgba(229,160,13,0.2)` : 'transparent',
+            border: 'none',
+            color: myUp ? ACCENT : TEXT_MUTED,
+            borderRadius: 6, padding: '6px 8px', fontSize: 13, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', minWidth: 36, justifyContent: 'center',
+            transition: 'all 0.2s',
+          }}
+        >▲</button>
+        <span style={{ fontSize: 12, fontWeight: 600, color: net > 0 ? ACCENT : net < 0 ? '#f87171' : TEXT_MUTED, minWidth: 16, textAlign: 'center' }}>
+          {net > 0 ? `+${net}` : net !== 0 ? net : '·'}
+        </span>
+        <button
+          onClick={e => { e.stopPropagation(); onVote(track.uri, 'down') }}
+          style={{
+            background: myDown ? 'rgba(248,113,113,0.15)' : 'transparent',
+            border: 'none',
+            color: myDown ? '#f87171' : TEXT_MUTED,
+            borderRadius: 6, padding: '6px 8px', fontSize: 13, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', minWidth: 36, justifyContent: 'center',
+            transition: 'all 0.2s',
+          }}
+        >▼</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', marginTop: 20 }}>
+      <button
+        onClick={() => onVote(track.uri, 'up')}
+        style={{
+          background: myUp ? `rgba(229,160,13,0.15)` : SURFACE,
+          border: myUp ? `1px solid rgba(229,160,13,0.4)` : `1px solid ${BORDER}`,
+          color: myUp ? ACCENT : TEXT_SECONDARY,
+          borderRadius: 12, padding: '12px 28px', fontSize: 20, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 8, minHeight: 48,
+          transition: 'all 0.2s', fontFamily: FONT,
+        }}
+      >
+        ▲ <span style={{ fontSize: 15, fontWeight: 700 }}>{track.votes.up.length}</span>
+      </button>
+      <button
+        onClick={() => onVote(track.uri, 'down')}
+        style={{
+          background: myDown ? 'rgba(248,113,113,0.12)' : SURFACE,
+          border: myDown ? '1px solid rgba(248,113,113,0.35)' : `1px solid ${BORDER}`,
+          color: myDown ? '#f87171' : TEXT_SECONDARY,
+          borderRadius: 12, padding: '12px 28px', fontSize: 20, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 8, minHeight: 48,
+          transition: 'all 0.2s', fontFamily: FONT,
+        }}
+      >
+        ▼ <span style={{ fontSize: 15, fontWeight: 700 }}>{track.votes.down.length}</span>
+      </button>
+    </div>
+  )
+}
+
+// ── Queue row ─────────────────────────────────────────────────────────────────
 
 function QueueRow({
-  track, isCurrentTrack, myUserId, onVote, rowRef,
+  track, isCurrentTrack, myUserId, onVote,
 }: {
   track: BroadcastTrack
   isCurrentTrack: boolean
   myUserId: string
   onVote: (uri: string, vote: 'up' | 'down') => void
-  rowRef?: React.Ref<HTMLDivElement>
 }) {
-  const myUp = track.votes.up.includes(myUserId)
-  const myDown = track.votes.down.includes(myUserId)
-
   return (
-    <div ref={rowRef} style={{
-      padding: '10px 0',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      display: 'flex', alignItems: 'center', gap: 10,
-      borderLeft: isCurrentTrack ? '2px solid var(--accent, #a78bfa)' : '2px solid transparent',
-      paddingLeft: isCurrentTrack ? 10 : 0,
-      background: isCurrentTrack ? 'rgba(167,139,250,0.05)' : 'transparent',
+    <div style={{
+      height: 64, display: 'flex', alignItems: 'center', gap: 12,
+      borderBottom: `1px solid ${BORDER}`,
+      paddingLeft: isCurrentTrack ? 8 : 0,
+      borderLeft: isCurrentTrack ? `2px solid ${ACCENT}` : '2px solid transparent',
+      background: isCurrentTrack ? `rgba(229,160,13,0.04)` : 'transparent',
+      transition: 'background 0.2s',
     }}>
+      {/* Album art thumbnail */}
       {track.artUrl ? (
-        <img src={track.artUrl} alt="" style={{ width: 38, height: 38, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+        <img src={track.artUrl} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
       ) : (
-        <div style={{ width: 38, height: 38, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+        <div style={{ width: 44, height: 44, borderRadius: 6, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
       )}
+
+      {/* Track info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 13, fontWeight: 600, color: isCurrentTrack ? 'var(--accent, #a78bfa)' : '#fff',
+          fontSize: 13, fontWeight: 600,
+          color: isCurrentTrack ? ACCENT : TEXT_PRIMARY,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>{track.title}</div>
         <div style={{
-          fontSize: 11, color: 'rgba(255,255,255,0.45)',
+          fontSize: 11, color: TEXT_SECONDARY,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>{track.artist}{track.addedBy ? ` · added by ${track.addedBy}` : ''}</div>
+        }}>
+          {track.artist}
+          {track.addedBy ? ` · via ${track.addedBy}` : ''}
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-        <button
-          onClick={() => onVote(track.uri, 'up')}
-          style={{
-            background: myUp ? 'rgba(134,239,172,0.2)' : 'rgba(255,255,255,0.07)',
-            border: myUp ? '1px solid rgba(134,239,172,0.4)' : '1px solid transparent',
-            color: myUp ? '#86efac' : 'rgba(255,255,255,0.4)',
-            borderRadius: 8, padding: '10px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', gap: 4, minWidth: 44, justifyContent: 'center',
-          }}
-        >
-          ↑ {track.votes.up.length}
-        </button>
-        <button
-          onClick={() => onVote(track.uri, 'down')}
-          style={{
-            background: myDown ? 'rgba(252,165,165,0.2)' : 'rgba(255,255,255,0.07)',
-            border: myDown ? '1px solid rgba(252,165,165,0.4)' : '1px solid transparent',
-            color: myDown ? '#fca5a5' : 'rgba(255,255,255,0.4)',
-            borderRadius: 8, padding: '10px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', gap: 4, minWidth: 44, justifyContent: 'center',
-          }}
-        >
-          ↓ {track.votes.down.length}
-        </button>
-      </div>
+
+      {/* Compact vote controls */}
+      <VoteButtons track={track} myUserId={myUserId} onVote={onVote} compact />
     </div>
   )
 }
 
-// ── Search section ─────────────────────────────────────────────────────────────
+// ── Search overlay ────────────────────────────────────────────────────────────
 
 type DrillView =
   | { kind: 'results' }
@@ -425,7 +462,8 @@ type DrillView =
   | { kind: 'album-tracks'; album: BroadcastAlbum; tracks: BroadcastTrack[] }
   | { kind: 'playlist-tracks'; playlist: BroadcastPlaylist; tracks: BroadcastTrack[] }
 
-function SearchSection({
+function SearchOverlay({
+  onClose,
   onAddTrack,
   onPlayNext,
   onSearch,
@@ -442,6 +480,7 @@ function SearchSection({
   myDisplayName,
   queue,
 }: {
+  onClose: () => void
   onAddTrack: (track: BroadcastTrack) => void
   onPlayNext: (track: BroadcastTrack) => void
   onSearch: (query: string) => void
@@ -468,8 +507,10 @@ function SearchSection({
   const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set())
   const [recentlyQueued, setRecentlyQueued] = useState<Set<string>>(new Set())
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  // When browseResults arrive, advance the drill view (push current view onto history first)
+  useEffect(() => { inputRef.current?.focus() }, [])
+
   useEffect(() => {
     if (!browseResults) return
     if (browseResults.kind === 'albums' && pendingArtist) {
@@ -496,7 +537,7 @@ function SearchSection({
     setPendingAlbum(null)
     setPendingPlaylist(null)
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => onSearch(q), 300)
+    debounceRef.current = setTimeout(() => onSearch(q), 350)
   }
 
   const handleClear = () => {
@@ -564,419 +605,442 @@ function SearchSection({
   }
 
   const hasResults = searchArtists.length > 0 || searchAlbums.length > 0 || searchPlaylists.length > 0 || searchResults.length > 0
+  const tracksToShow = drillView.kind === 'album-tracks' ? drillView.tracks
+    : drillView.kind === 'results' ? searchResults : []
 
-  // Determine what list of tracks to show in track rows
-  const tracksToShow = drillView.kind === 'album-tracks'
-    ? drillView.tracks
-    : drillView.kind === 'results'
-    ? searchResults
-    : []
-
-  const sectionHeader = (label: string) => (
-    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '10px 14px 6px' }}>
-      {label}
-    </div>
+  const sectionLabel = (label: string) => (
+    <div style={{
+      fontSize: 10, fontWeight: 700, color: TEXT_MUTED, letterSpacing: '0.1em',
+      textTransform: 'uppercase', padding: '14px 0 6px',
+    }}>{label}</div>
   )
 
-  return (
-    <div>
-      {/* Back button when drilling */}
-      {drillView.kind !== 'results' && (
-        <button
-          onClick={goBack}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(255,255,255,0.5)', fontSize: 13, fontFamily: 'inherit',
-            padding: '0 0 12px', fontWeight: 500,
-          }}
-        >
-          ← Back
-        </button>
-      )}
+  const drillHeader = () => {
+    if (drillView.kind === 'artist-albums') return drillView.artist.title
+    if (drillView.kind === 'album-tracks') return `${drillView.album.title} · ${drillView.album.artistName}`
+    if (drillView.kind === 'playlist-tracks') return drillView.playlist.title
+    return null
+  }
 
-      <div style={{ position: 'relative' }}>
-        <input
-          value={query}
-          onChange={handleInput}
-          placeholder="Artists, albums, tracks…"
-          style={{
-            width: '100%', padding: '11px 44px 11px 16px',
-            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 10, color: '#fff', fontSize: 16, outline: 'none',
-            fontFamily: 'inherit', boxSizing: 'border-box', WebkitAppearance: 'none',
-          }}
-        />
-        {(searching || browsing) && (
-          <span style={{
-            position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-            fontSize: 11, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
-          }}>{searching ? 'Searching…' : 'Loading…'}</span>
+  const trackActionRow = (r: BroadcastTrack, i: number, totalCount: number) => {
+    const queued = recentlyQueued.has(r.uri)
+    const nexted = recentlyAdded.has(r.uri)
+    return (
+      <div
+        key={`${r.uri}-${i}`}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 0',
+          borderBottom: i < totalCount - 1 ? `1px solid ${BORDER}` : 'none',
+        }}
+      >
+        {r.artUrl ? (
+          <img src={r.artUrl} alt="" style={{ width: 38, height: 38, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 38, height: 38, borderRadius: 5, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
         )}
-        {query && !searching && !browsing && (
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
+          <div style={{ fontSize: 11, color: TEXT_SECONDARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist}{r.album ? ` · ${r.album}` : ''}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
           <button
-            onClick={handleClear}
-            aria-label="Clear search"
+            onClick={() => handlePlayNext(r)}
             style={{
-              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-              background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%',
-              width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1,
-              padding: 0,
+              padding: '6px 10px',
+              background: nexted ? 'rgba(134,239,172,0.12)' : `rgba(229,160,13,0.12)`,
+              border: nexted ? '1px solid rgba(134,239,172,0.3)' : `1px solid rgba(229,160,13,0.25)`,
+              borderRadius: 7,
+              color: nexted ? '#86efac' : ACCENT,
+              cursor: 'pointer', fontSize: 11, fontWeight: 600,
+              fontFamily: FONT, whiteSpace: 'nowrap', transition: 'all 0.2s',
             }}
-          >×</button>
+          >{nexted ? '✓ Next' : '▶ Next'}</button>
+          <button
+            onClick={() => handleAdd(r)}
+            style={{
+              padding: '6px 10px',
+              background: queued ? 'rgba(134,239,172,0.12)' : SURFACE,
+              border: queued ? '1px solid rgba(134,239,172,0.3)' : `1px solid ${BORDER}`,
+              borderRadius: 7,
+              color: queued ? '#86efac' : TEXT_SECONDARY,
+              cursor: 'pointer', fontSize: 11, fontWeight: 600,
+              fontFamily: FONT, whiteSpace: 'nowrap', transition: 'all 0.2s',
+            }}
+          >{queued ? '✓ Added' : '+ Queue'}</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: BG,
+      display: 'flex', flexDirection: 'column',
+      fontFamily: FONT,
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '16px 16px 12px',
+        borderBottom: `1px solid ${BORDER}`,
+        flexShrink: 0,
+      }}>
+        <button
+          onClick={drillView.kind !== 'results' ? goBack : onClose}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: TEXT_SECONDARY, fontSize: 22, padding: '0 4px',
+            display: 'flex', alignItems: 'center', lineHeight: 1,
+            minWidth: 32,
+          }}
+          aria-label="Back"
+        >‹</button>
+
+        {drillView.kind !== 'results' ? (
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {drillHeader()}
+            </div>
+          </div>
+        ) : (
+          <div style={{ flex: 1, position: 'relative' }}>
+            <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT_MUTED} strokeWidth="2">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            </svg>
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={handleInput}
+              placeholder="Artists, albums, tracks…"
+              style={{
+                width: '100%', padding: '10px 36px 10px 36px',
+                background: 'rgba(255,255,255,0.07)', border: `1px solid ${BORDER}`,
+                borderRadius: 22, color: TEXT_PRIMARY, fontSize: 15, outline: 'none',
+                fontFamily: FONT, boxSizing: 'border-box', WebkitAppearance: 'none',
+              }}
+            />
+            {(searching || browsing) && (
+              <span style={{
+                position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                fontSize: 11, color: TEXT_MUTED, pointerEvents: 'none',
+              }}>{searching ? '…' : '…'}</span>
+            )}
+            {query && !searching && !browsing && (
+              <button
+                onClick={handleClear}
+                style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%',
+                  width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: TEXT_SECONDARY, fontSize: 13, lineHeight: 1, padding: 0,
+                }}
+              >×</button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Empty state when search completes but has no results */}
-      {drillView.kind === 'results' && query && !searching && !browsing &&
-        searchResults.length === 0 && searchArtists.length === 0 && searchAlbums.length === 0 && searchPlaylists.length === 0 && (
-        <div style={{
-          textAlign: 'center', padding: '32px 0',
-          color: 'rgba(255,255,255,0.3)', fontSize: 13,
-        }}>
-          No results for <strong style={{ color: 'rgba(255,255,255,0.5)' }}>"{query}"</strong>
-        </div>
-      )}
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px', paddingBottom: 'max(32px, env(safe-area-inset-bottom, 0px))' }}>
 
-      {/* Confirm duplicate modal */}
+        {/* Empty / no query state */}
+        {drillView.kind === 'results' && !query && (
+          <div style={{ textAlign: 'center', paddingTop: 48, color: TEXT_MUTED, fontSize: 13 }}>
+            Type to search your host's library
+          </div>
+        )}
+
+        {/* Searching spinner text */}
+        {drillView.kind === 'results' && query && searching && (
+          <div style={{ textAlign: 'center', paddingTop: 32, color: TEXT_MUTED, fontSize: 13 }}>
+            Searching…
+          </div>
+        )}
+
+        {/* No results */}
+        {drillView.kind === 'results' && query && !searching && !browsing && !hasResults && (
+          <div style={{ textAlign: 'center', paddingTop: 32, color: TEXT_MUTED, fontSize: 13 }}>
+            No results for <strong style={{ color: TEXT_SECONDARY }}>"{query}"</strong>
+          </div>
+        )}
+
+        {/* Top-level results */}
+        {drillView.kind === 'results' && hasResults && (
+          <div>
+            {searchArtists.length > 0 && (
+              <>
+                {sectionLabel('Artists')}
+                <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${BORDER}` }}>
+                  {searchArtists.map((artist, i) => (
+                    <div
+                      key={artist.ratingKey}
+                      onClick={() => handleArtistClick(artist)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 14px', background: SURFACE,
+                        borderBottom: i < searchArtists.length - 1 ? `1px solid ${BORDER}` : 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {artist.artUrl ? (
+                        <img src={artist.artUrl} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500, color: TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {artist.title}
+                      </div>
+                      <span style={{ color: TEXT_MUTED, fontSize: 16 }}>›</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {searchAlbums.length > 0 && (
+              <>
+                {sectionLabel('Albums')}
+                <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${BORDER}` }}>
+                  {searchAlbums.map((album, i) => (
+                    <div
+                      key={album.ratingKey}
+                      onClick={() => handleAlbumClick(album)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 14px', background: SURFACE,
+                        borderBottom: i < searchAlbums.length - 1 ? `1px solid ${BORDER}` : 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {album.artUrl ? (
+                        <img src={album.artUrl} alt="" style={{ width: 36, height: 36, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: 36, height: 36, borderRadius: 5, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.title}</div>
+                        <div style={{ fontSize: 11, color: TEXT_SECONDARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.artistName}</div>
+                      </div>
+                      <span style={{ color: TEXT_MUTED, fontSize: 16 }}>›</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {searchPlaylists.length > 0 && (
+              <>
+                {sectionLabel('Playlists')}
+                <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${BORDER}` }}>
+                  {searchPlaylists.map((playlist, i) => (
+                    <div
+                      key={playlist.ratingKey}
+                      onClick={() => handlePlaylistClick(playlist)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 14px', background: SURFACE,
+                        borderBottom: i < searchPlaylists.length - 1 ? `1px solid ${BORDER}` : 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {playlist.artUrl ? (
+                        <img src={playlist.artUrl} alt="" style={{ width: 36, height: 36, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 5, background: 'rgba(255,255,255,0.08)',
+                          flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT_MUTED} strokeWidth="2">
+                            <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+                          </svg>
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{playlist.title}</div>
+                        <div style={{ fontSize: 11, color: TEXT_SECONDARY }}>{playlist.trackCount} {playlist.trackCount === 1 ? 'track' : 'tracks'}</div>
+                      </div>
+                      <span style={{ color: TEXT_MUTED, fontSize: 16 }}>›</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {tracksToShow.length > 0 && (
+              <>
+                {(searchArtists.length > 0 || searchAlbums.length > 0 || searchPlaylists.length > 0) && sectionLabel('Tracks')}
+                {tracksToShow.map((r, i) => trackActionRow(r, i, tracksToShow.length))}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Artist albums drill-down */}
+        {drillView.kind === 'artist-albums' && (
+          <div>
+            {browsing && <div style={{ textAlign: 'center', paddingTop: 32, color: TEXT_MUTED, fontSize: 13 }}>Loading albums…</div>}
+            {!browsing && drillView.albums.length === 0 && (
+              <div style={{ textAlign: 'center', paddingTop: 32, color: TEXT_MUTED, fontSize: 13 }}>No albums found</div>
+            )}
+            {!browsing && drillView.albums.length > 0 && (
+              <div style={{ marginTop: 12, borderRadius: 10, overflow: 'hidden', border: `1px solid ${BORDER}` }}>
+                {drillView.albums.map((album, i) => (
+                  <div
+                    key={album.ratingKey}
+                    onClick={() => handleAlbumClick(album)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 14px', background: SURFACE,
+                      borderBottom: i < drillView.albums.length - 1 ? `1px solid ${BORDER}` : 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {album.artUrl ? (
+                      <img src={album.artUrl} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 44, height: 44, borderRadius: 6, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.title}</div>
+                      <div style={{ fontSize: 11, color: TEXT_SECONDARY }}>{album.year ?? ''}</div>
+                    </div>
+                    <span style={{ color: TEXT_MUTED, fontSize: 16 }}>›</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Album tracks drill-down */}
+        {drillView.kind === 'album-tracks' && (
+          <div style={{ marginTop: 4 }}>
+            {browsing && <div style={{ textAlign: 'center', paddingTop: 32, color: TEXT_MUTED, fontSize: 13 }}>Loading tracks…</div>}
+            {!browsing && drillView.tracks.map((r, i) => {
+              const queued = recentlyQueued.has(r.uri)
+              const nexted = recentlyAdded.has(r.uri)
+              return (
+                <div
+                  key={`${r.uri}-${i}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 0',
+                    borderBottom: i < drillView.tracks.length - 1 ? `1px solid ${BORDER}` : 'none',
+                  }}
+                >
+                  <div style={{ width: 24, minWidth: 24, textAlign: 'right', fontSize: 11, color: TEXT_MUTED }}>{i + 1}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
+                    {r.artist && <div style={{ fontSize: 11, color: TEXT_SECONDARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist}</div>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <button onClick={() => handlePlayNext(r)} style={{
+                      padding: '6px 10px',
+                      background: nexted ? 'rgba(134,239,172,0.12)' : `rgba(229,160,13,0.12)`,
+                      border: nexted ? '1px solid rgba(134,239,172,0.3)' : `1px solid rgba(229,160,13,0.25)`,
+                      borderRadius: 7, color: nexted ? '#86efac' : ACCENT,
+                      cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                      fontFamily: FONT, whiteSpace: 'nowrap', transition: 'all 0.2s',
+                    }}>{nexted ? '✓ Next' : '▶ Next'}</button>
+                    <button onClick={() => handleAdd(r)} style={{
+                      padding: '6px 10px',
+                      background: queued ? 'rgba(134,239,172,0.12)' : SURFACE,
+                      border: queued ? '1px solid rgba(134,239,172,0.3)' : `1px solid ${BORDER}`,
+                      borderRadius: 7, color: queued ? '#86efac' : TEXT_SECONDARY,
+                      cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                      fontFamily: FONT, whiteSpace: 'nowrap', transition: 'all 0.2s',
+                    }}>{queued ? '✓ Added' : '+ Queue'}</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Playlist tracks drill-down */}
+        {drillView.kind === 'playlist-tracks' && (
+          <div style={{ marginTop: 4 }}>
+            {browsing && <div style={{ textAlign: 'center', paddingTop: 32, color: TEXT_MUTED, fontSize: 13 }}>Loading tracks…</div>}
+            {!browsing && drillView.tracks.map((r, i) => {
+              const queued = recentlyQueued.has(r.uri)
+              const nexted = recentlyAdded.has(r.uri)
+              return (
+                <div
+                  key={`${r.uri}-${i}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 0',
+                    borderBottom: i < drillView.tracks.length - 1 ? `1px solid ${BORDER}` : 'none',
+                  }}
+                >
+                  {r.artUrl ? (
+                    <img src={r.artUrl} alt="" style={{ width: 38, height: 38, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 38, height: 38, borderRadius: 5, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
+                    <div style={{ fontSize: 11, color: TEXT_SECONDARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {r.artist}{r.album ? ` · ${r.album}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <button onClick={() => handlePlayNext(r)} style={{
+                      padding: '6px 10px',
+                      background: nexted ? 'rgba(134,239,172,0.12)' : `rgba(229,160,13,0.12)`,
+                      border: nexted ? '1px solid rgba(134,239,172,0.3)' : `1px solid rgba(229,160,13,0.25)`,
+                      borderRadius: 7, color: nexted ? '#86efac' : ACCENT,
+                      cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                      fontFamily: FONT, whiteSpace: 'nowrap', transition: 'all 0.2s',
+                    }}>{nexted ? '✓ Next' : '▶ Next'}</button>
+                    <button onClick={() => handleAdd(r)} style={{
+                      padding: '6px 10px',
+                      background: queued ? 'rgba(134,239,172,0.12)' : SURFACE,
+                      border: queued ? '1px solid rgba(134,239,172,0.3)' : `1px solid ${BORDER}`,
+                      borderRadius: 7, color: queued ? '#86efac' : TEXT_SECONDARY,
+                      cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                      fontFamily: FONT, whiteSpace: 'nowrap', transition: 'all 0.2s',
+                    }}>{queued ? '✓ Added' : '+ Queue'}</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Duplicate confirm modal */}
       {confirmTrack && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,0.7)',
+          background: 'rgba(0,0,0,0.75)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
         }}>
           <div style={{
-            background: '#111', border: '1px solid rgba(255,255,255,0.1)',
+            background: '#1a1a1a', border: `1px solid ${BORDER}`,
             borderRadius: 16, padding: 24, maxWidth: 320, width: '100%',
           }}>
-            <p style={{ fontSize: 14, marginBottom: 20, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
-              <strong style={{ color: '#fff' }}>{confirmTrack.title}</strong> is already in the queue. Add it again?
+            <p style={{ fontSize: 14, marginBottom: 20, color: TEXT_SECONDARY, lineHeight: 1.6 }}>
+              <strong style={{ color: TEXT_PRIMARY }}>{confirmTrack.title}</strong> is already in the queue. Add it again?
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setConfirmTrack(null)} style={{
-                flex: 1, padding: '11px 0', background: 'rgba(255,255,255,0.08)',
-                border: 'none', borderRadius: 9, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
+                flex: 1, padding: '12px 0', background: SURFACE,
+                border: 'none', borderRadius: 9, color: TEXT_SECONDARY, cursor: 'pointer', fontFamily: FONT, fontSize: 13,
               }}>Cancel</button>
               <button onClick={() => {
                 onAddTrack({ ...confirmTrack, addedBy: myDisplayName, votes: { up: [], down: [] } })
                 flashAdded(confirmTrack.uri, setRecentlyQueued)
                 setConfirmTrack(null)
               }} style={{
-                flex: 1, padding: '11px 0', background: 'var(--accent, #a78bfa)',
-                border: 'none', borderRadius: 9, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+                flex: 1, padding: '12px 0', background: ACCENT,
+                border: 'none', borderRadius: 9, color: '#000', cursor: 'pointer', fontFamily: FONT, fontSize: 13, fontWeight: 700,
               }}>Add Anyway</button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Artist albums drill-down */}
-      {drillView.kind === 'artist-albums' && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{drillView.artist.title}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>Select an album</div>
-          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
-            {drillView.albums.map((album, i) => (
-              <div
-                key={album.ratingKey}
-                onClick={() => handleAlbumClick(album)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
-                  borderBottom: i < drillView.albums.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                {album.artUrl ? (
-                  <img src={album.artUrl} alt="" style={{ width: 38, height: 38, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
-                ) : (
-                  <div style={{ width: 38, height: 38, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.title}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{album.year ?? ''}</div>
-                </div>
-                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>›</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Top-level search results: Artists + Albums + Tracks sections */}
-      {drillView.kind === 'results' && hasResults && (
-        <div style={{ marginTop: 8, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
-          {/* Artists section */}
-          {searchArtists.length > 0 && (
-            <>
-              {sectionHeader('Artists')}
-              {searchArtists.map((artist) => (
-                <div
-                  key={artist.ratingKey}
-                  onClick={() => handleArtistClick(artist)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 14px', background: 'rgba(255,255,255,0.03)',
-                    borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {artist.artUrl ? (
-                    <img src={artist.artUrl} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                  ) : (
-                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                  )}
-                  <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {artist.title}
-                  </div>
-                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>›</span>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* Albums section */}
-          {searchAlbums.length > 0 && (
-            <>
-              {sectionHeader('Albums')}
-              {searchAlbums.map((album) => (
-                <div
-                  key={album.ratingKey}
-                  onClick={() => handleAlbumClick(album)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 14px', background: 'rgba(255,255,255,0.03)',
-                    borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {album.artUrl ? (
-                    <img src={album.artUrl} alt="" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
-                  ) : (
-                    <div style={{ width: 34, height: 34, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.title}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.artistName}</div>
-                  </div>
-                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>›</span>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* Playlists section */}
-          {searchPlaylists.length > 0 && (
-            <>
-              {sectionHeader('Playlists')}
-              {searchPlaylists.map((playlist) => (
-                <div
-                  key={playlist.ratingKey}
-                  onClick={() => handlePlaylistClick(playlist)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 14px', background: 'rgba(255,255,255,0.03)',
-                    borderBottom: '1px solid rgba(255,255,255,0.06)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {playlist.artUrl ? (
-                    <img src={playlist.artUrl} alt="" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
-                  ) : (
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 4, background: 'rgba(255,255,255,0.08)',
-                      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2">
-                        <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-                        <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
-                      </svg>
-                    </div>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{playlist.title}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{playlist.trackCount} {playlist.trackCount === 1 ? 'track' : 'tracks'}</div>
-                  </div>
-                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>›</span>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* Tracks section */}
-          {searchResults.length > 0 && (
-            <>
-              {(searchArtists.length > 0 || searchAlbums.length > 0 || searchPlaylists.length > 0) && sectionHeader('Tracks')}
-              {tracksToShow.map((r, i) => {
-                const queued = recentlyQueued.has(r.uri)
-                const nexted = recentlyAdded.has(r.uri)
-                return (
-                  <div
-                    key={`${r.uri}-${i}`}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
-                      borderBottom: i < tracksToShow.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                    }}
-                  >
-                    {r.artUrl ? (
-                      <img src={r.artUrl} alt="" style={{ width: 36, height: 36, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
-                    ) : (
-                      <div style={{ width: 36, height: 36, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>{r.title}</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist} · {r.album}</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                      <button
-                        onClick={() => handlePlayNext(r)}
-                        style={{
-                          padding: '6px 10px',
-                          background: nexted ? 'rgba(134,239,172,0.15)' : 'rgba(167,139,250,0.15)',
-                          border: nexted ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(167,139,250,0.3)',
-                          borderRadius: 7,
-                          color: nexted ? '#86efac' : '#a78bfa',
-                          cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                          fontFamily: 'inherit', whiteSpace: 'nowrap',
-                          transition: 'all 0.2s',
-                        }}
-                      >{nexted ? '✓ Next' : '▶︎ Next'}</button>
-                      <button
-                        onClick={() => handleAdd(r)}
-                        style={{
-                          padding: '6px 10px',
-                          background: queued ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)',
-                          border: queued ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(255,255,255,0.12)',
-                          borderRadius: 7,
-                          color: queued ? '#86efac' : 'rgba(255,255,255,0.8)',
-                          cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                          fontFamily: 'inherit', whiteSpace: 'nowrap',
-                          transition: 'all 0.2s',
-                        }}
-                      >{queued ? '✓ Added' : '+ Queue'}</button>
-                    </div>
-                  </div>
-                )
-              })}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Album tracks drill-down */}
-      {drillView.kind === 'album-tracks' && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{drillView.album.title}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>{drillView.album.artistName}</div>
-          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
-            {drillView.tracks.map((r, i) => {
-              const queued = recentlyQueued.has(r.uri)
-              const nexted = recentlyAdded.has(r.uri)
-              return (
-                <div
-                  key={`${r.uri}-${i}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
-                    borderBottom: i < drillView.tracks.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                  }}
-                >
-                  <div style={{ width: 22, minWidth: 22, textAlign: 'right', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{i + 1}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>{r.title}</div>
-                    {r.artist && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist}</div>}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button
-                      onClick={() => handlePlayNext(r)}
-                      style={{
-                        padding: '6px 10px',
-                        background: nexted ? 'rgba(134,239,172,0.15)' : 'rgba(167,139,250,0.15)',
-                        border: nexted ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(167,139,250,0.3)',
-                        borderRadius: 7, color: nexted ? '#86efac' : '#a78bfa',
-                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                        fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.2s',
-                      }}
-                    >{nexted ? '✓ Next' : '▶︎ Next'}</button>
-                    <button
-                      onClick={() => handleAdd(r)}
-                      style={{
-                        padding: '6px 10px',
-                        background: queued ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)',
-                        border: queued ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(255,255,255,0.12)',
-                        borderRadius: 7, color: queued ? '#86efac' : 'rgba(255,255,255,0.8)',
-                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                        fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.2s',
-                      }}
-                    >{queued ? '✓ Added' : '+ Queue'}</button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Playlist tracks drill-down */}
-      {drillView.kind === 'playlist-tracks' && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{drillView.playlist.title}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
-            {drillView.tracks.length} {drillView.tracks.length === 1 ? 'track' : 'tracks'}
-          </div>
-          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
-            {drillView.tracks.map((r, i) => {
-              const queued = recentlyQueued.has(r.uri)
-              const nexted = recentlyAdded.has(r.uri)
-              return (
-                <div
-                  key={`${r.uri}-${i}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
-                    borderBottom: i < drillView.tracks.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                  }}
-                >
-                  {r.artUrl ? (
-                    <img src={r.artUrl} alt="" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
-                  ) : (
-                    <div style={{ width: 34, height: 34, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>{r.title}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {r.artist}{r.album ? ` · ${r.album}` : ''}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button
-                      onClick={() => handlePlayNext(r)}
-                      style={{
-                        padding: '6px 10px',
-                        background: nexted ? 'rgba(134,239,172,0.15)' : 'rgba(167,139,250,0.15)',
-                        border: nexted ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(167,139,250,0.3)',
-                        borderRadius: 7, color: nexted ? '#86efac' : '#a78bfa',
-                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                        fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.2s',
-                      }}
-                    >{nexted ? '✓ Next' : '▶︎ Next'}</button>
-                    <button
-                      onClick={() => handleAdd(r)}
-                      style={{
-                        padding: '6px 10px',
-                        background: queued ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)',
-                        border: queued ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(255,255,255,0.12)',
-                        borderRadius: 7, color: queued ? '#86efac' : 'rgba(255,255,255,0.8)',
-                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                        fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.2s',
-                      }}
-                    >{queued ? '✓ Added' : '+ Queue'}</button>
-                  </div>
-                </div>
-              )
-            })}
           </div>
         </div>
       )}
@@ -993,10 +1057,9 @@ export default function BroadcastPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [participants, setParticipants] = useState<BroadcastParticipant[]>([])
-  const [showNameModal, setShowNameModal] = useState(false)
   const [joined, setJoined] = useState(false)
-  const [showBanner, setShowBanner] = useState(true)
-  const [activeTab, setActiveTab] = useState<'queue' | 'search'>('queue')
+  const [showNameModal, setShowNameModal] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
   const [artUrl, setArtUrl] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<BroadcastTrack[]>([])
   const [searchArtists, setSearchArtists] = useState<BroadcastArtist[]>([])
@@ -1018,6 +1081,9 @@ export default function BroadcastPage() {
   const [myDisplayName, setMyDisplayName] = useState<string>(() => getSavedName() || '')
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  // Track whether the channel is in SUBSCRIBED state — send() silently drops
+  // messages on non-SUBSCRIBED channels, so we must guard all sends.
+  const channelSubscribedRef = useRef(false)
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deepLinkAttempted = useRef(false)
@@ -1050,7 +1116,6 @@ export default function BroadcastPage() {
             deepLinkAttempted.current = true
             window.location.href = `fibertuner://broadcast/${code}`
           }
-          // Auto-rejoin returning users — skip the name modal if we have a saved name
           const savedName = getSavedName()
           if (savedName) {
             setJoined(true)
@@ -1070,13 +1135,12 @@ export default function BroadcastPage() {
     }
   }, [session?.currentTrack?.title])
 
-  // Presence + broadcast (search-results, browse-results) on a dedicated channel.
-  // postgres_changes is intentionally omitted: a server-side filter mismatch would
-  // trigger CHANNEL_ERROR which calls unsubscribe() and tears down the broadcast
-  // listener, causing search to get permanently stuck on "searching".
-  // Session state updates come from the polling fallback below instead.
+  // Presence + broadcast channel — only set channelRef.current AFTER SUBSCRIBED.
+  // This prevents send() calls from being silently dropped on a not-yet-ready channel.
   useEffect(() => {
     if (!code || !joined) return
+
+    channelSubscribedRef.current = false
 
     const ch = supabase
       .channel(`broadcast:${code}`)
@@ -1102,16 +1166,23 @@ export default function BroadcastPage() {
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
+          // Only now is the channel ready to send — store ref and mark subscribed
+          channelRef.current = ch
+          channelSubscribedRef.current = true
           ch.track({ userId: myUserId, displayName: myDisplayName, isHost: false, joinedAt: Date.now() }).catch(() => {})
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          channelSubscribedRef.current = false
         }
       })
 
-    channelRef.current = ch
-    return () => { ch.unsubscribe() }
+    return () => {
+      channelSubscribedRef.current = false
+      channelRef.current = null
+      ch.unsubscribe()
+    }
   }, [code, joined, myUserId, myDisplayName])
 
-  // Polling fallback — ensures live track/queue updates even if Realtime postgres_changes
-  // doesn't fire (e.g. Realtime not enabled on the table, or connection hiccup).
+  // Polling fallback for track/queue state
   useEffect(() => {
     if (!code || !joined) return
     const id = setInterval(async () => {
@@ -1131,6 +1202,12 @@ export default function BroadcastPage() {
     setJoined(true)
   }
 
+  // Safe send — only sends when channel is confirmed SUBSCRIBED
+  const safeSend = useCallback((payload: BroadcastCommand) => {
+    if (!channelRef.current || !channelSubscribedRef.current) return
+    channelRef.current.send({ type: 'broadcast', event: 'command', payload }).catch(() => {})
+  }, [])
+
   const handleVote = useCallback((trackUri: string, vote: 'up' | 'down') => {
     setSession(prev => {
       if (!prev) return prev
@@ -1148,19 +1225,16 @@ export default function BroadcastPage() {
         }),
       }
     })
-    const cmd: BroadcastCommand = { type: 'vote', trackUri, vote, userId: myUserId, displayName: myDisplayName }
-    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
-  }, [myUserId, myDisplayName])
+    safeSend({ type: 'vote', trackUri, vote, userId: myUserId, displayName: myDisplayName })
+  }, [myUserId, myDisplayName, safeSend])
 
   const handleAddTrack = useCallback((track: BroadcastTrack) => {
-    const cmd: BroadcastCommand = { type: 'add-track', track, addedBy: myDisplayName, userId: myUserId }
-    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
-  }, [myUserId, myDisplayName])
+    safeSend({ type: 'add-track', track, addedBy: myDisplayName, userId: myUserId })
+  }, [myUserId, myDisplayName, safeSend])
 
   const handlePlayNext = useCallback((track: BroadcastTrack) => {
-    const cmd: BroadcastCommand = { type: 'play-next', track, addedBy: myDisplayName, userId: myUserId }
-    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
-  }, [myUserId, myDisplayName])
+    safeSend({ type: 'play-next', track, addedBy: myDisplayName, userId: myUserId })
+  }, [myUserId, myDisplayName, safeSend])
 
   const handleSearch = useCallback((query: string) => {
     if (!query.trim()) {
@@ -1180,52 +1254,48 @@ export default function BroadcastPage() {
     setBrowseResults(null)
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
-    const cmd: BroadcastCommand = { type: 'search-request', query: query.trim(), requestId, userId: myUserId }
-    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+    safeSend({ type: 'search-request', query: query.trim(), requestId, userId: myUserId })
     searchTimeoutRef.current = setTimeout(() => setSearching(false), 10000)
-  }, [myUserId])
+  }, [myUserId, safeSend])
 
   const handleBrowseArtist = useCallback((artist: BroadcastArtist) => {
     setBrowsing(true)
     setBrowseResults(null)
     if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
-    const cmd: BroadcastCommand = { type: 'browse-artist', artistRatingKey: artist.ratingKey, requestId, userId: myUserId }
-    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+    safeSend({ type: 'browse-artist', artistRatingKey: artist.ratingKey, requestId, userId: myUserId })
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
-  }, [myUserId])
+  }, [myUserId, safeSend])
 
   const handleBrowseAlbum = useCallback((album: BroadcastAlbum) => {
     setBrowsing(true)
     setBrowseResults(null)
     if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
-    const cmd: BroadcastCommand = { type: 'browse-album', albumRatingKey: album.ratingKey, requestId, userId: myUserId }
-    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+    safeSend({ type: 'browse-album', albumRatingKey: album.ratingKey, requestId, userId: myUserId })
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
-  }, [myUserId])
+  }, [myUserId, safeSend])
 
   const handleBrowsePlaylist = useCallback((playlist: BroadcastPlaylist) => {
     setBrowsing(true)
     setBrowseResults(null)
     if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
-    const cmd: BroadcastCommand = { type: 'browse-playlist', playlistRatingKey: playlist.ratingKey, requestId, userId: myUserId }
-    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+    safeSend({ type: 'browse-playlist', playlistRatingKey: playlist.ratingKey, requestId, userId: myUserId })
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
-  }, [myUserId])
+  }, [myUserId, safeSend])
 
-  // ── Render ────────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
 
-  const pageStyle = {
-    minHeight: '100vh', background: '#0a0a0a', color: '#fff',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
+  const pageStyle: React.CSSProperties = {
+    minHeight: '100vh', background: BG, color: TEXT_PRIMARY,
+    fontFamily: FONT, position: 'relative',
   }
 
   if (!code) {
     return (
       <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Invalid broadcast URL.</p>
+        <p style={{ color: TEXT_MUTED, fontSize: 14 }}>Invalid broadcast URL.</p>
       </div>
     )
   }
@@ -1233,7 +1303,7 @@ export default function BroadcastPage() {
   if (loading) {
     return (
       <div style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Loading broadcast…</div>
+        <div style={{ color: TEXT_MUTED, fontSize: 14 }}>Loading broadcast…</div>
       </div>
     )
   }
@@ -1244,15 +1314,14 @@ export default function BroadcastPage() {
     return (
       <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20, textAlign: 'center' }}>
         {artUrl ? (
-          <img src={artUrl} alt="" style={{ width: 96, height: 96, borderRadius: 12, objectFit: 'cover', opacity: 0.3, filter: 'grayscale(40%)' }} />
+          <img src={artUrl} alt="" style={{ width: 88, height: 88, borderRadius: 12, objectFit: 'cover', opacity: 0.25, filter: 'grayscale(40%)' }} />
         ) : (
           <div style={{
             width: 72, height: 72, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: SURFACE, border: `1px solid ${BORDER}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={TEXT_MUTED} strokeWidth="1.5">
               <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
             </svg>
           </div>
@@ -1260,25 +1329,25 @@ export default function BroadcastPage() {
         <div>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+            background: SURFACE, border: `1px solid ${BORDER}`,
             borderRadius: 20, padding: '4px 12px', marginBottom: 16,
           }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.25)' }} />
-            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: TEXT_MUTED }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: TEXT_MUTED, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Broadcast Ended
             </span>
           </div>
-          {sessionName && <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px', color: '#fff' }}>{sessionName}</h2>}
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
+          {sessionName && <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px' }}>{sessionName}</h2>}
+          <p style={{ fontSize: 14, color: TEXT_MUTED, margin: 0 }}>
             {sessionName ? 'This broadcast has ended.' : 'This broadcast link is no longer active.'}
           </p>
           {lastTrack && (
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', marginTop: 12 }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.18)', marginTop: 12 }}>
               Last played: {lastTrack.title} · {lastTrack.artist}
             </p>
           )}
         </div>
-        <a href="https://fibertuner.com" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none', marginTop: 8 }}>
+        <a href="https://fibertuner.com" style={{ fontSize: 12, color: TEXT_MUTED, textDecoration: 'none', marginTop: 4 }}>
           fibertuner.com
         </a>
       </div>
@@ -1289,151 +1358,212 @@ export default function BroadcastPage() {
     return <JoinScreen session={session} artUrl={artUrl} onJoin={handleJoin} />
   }
 
+  // Current and upcoming tracks
+  const currentTrack = session.currentTrack
+  const upcomingQueue = session.queue.slice(session.currentIndex + 1)
+
+  const displayArt = artUrl || currentTrack?.artUrl
+
   return (
-    <div style={pageStyle}>
-      {showBanner && <AppBanner onDismiss={() => setShowBanner(false)} />}
+    <>
+      {/* Global animation styles */}
+      <style>{`
+        @keyframes livePulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.85); }
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: ${BG}; }
+      `}</style>
 
-      <header style={{
-        padding: '14px 20px',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: '50%',
-            background: session.state === 'playing' ? '#4ade80' : 'rgba(255,255,255,0.25)',
-            boxShadow: session.state === 'playing' ? '0 0 6px #4ade80' : 'none',
-          }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
-            {session.name || `${session.hostName}'s Broadcast`}
-          </span>
-        </div>
-        <span style={{
-          fontSize: 11, fontFamily: 'monospace', letterSpacing: '0.15em',
-          color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)',
-          padding: '3px 8px', borderRadius: 6,
-        }}>{code}</span>
-      </header>
+      {/* Search overlay (full-screen, above everything) */}
+      {showSearch && (
+        <SearchOverlay
+          onClose={() => setShowSearch(false)}
+          onAddTrack={handleAddTrack}
+          onPlayNext={handlePlayNext}
+          onSearch={handleSearch}
+          onBrowseArtist={handleBrowseArtist}
+          onBrowseAlbum={handleBrowseAlbum}
+          onBrowsePlaylist={handleBrowsePlaylist}
+          searchResults={searchResults}
+          searchArtists={searchArtists}
+          searchAlbums={searchAlbums}
+          searchPlaylists={searchPlaylists}
+          browseResults={browseResults}
+          searching={searching}
+          browsing={browsing}
+          myDisplayName={myDisplayName}
+          queue={session.queue}
+        />
+      )}
 
-      <div style={{
-        padding: '10px 20px',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        background: 'rgba(255,255,255,0.02)',
-        fontSize: 12, color: 'rgba(255,255,255,0.38)', lineHeight: 1.6,
-      }}>
-        <strong style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>{session.hostName}</strong>
-        {' '}is broadcasting their Plex queue live on Fibertuner — add tracks and vote on what's next.
-      </div>
+      {/* Main page */}
+      <div style={pageStyle}>
+        <div style={{ maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px' }}>
-
-        {/* Now Playing */}
-        <section style={{ paddingTop: 24, paddingBottom: 20 }}>
-          {(() => {
-            const displayArt = artUrl || session.currentTrack?.artUrl
-            return (
+          {/* ── Slim header ────────────────────────────────────────────────── */}
+          <header style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 20px 12px',
+            flexShrink: 0,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
               <div style={{
-                width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
-                background: 'rgba(255,255,255,0.06)', marginBottom: 20,
-                boxShadow: displayArt ? '0 20px 60px rgba(0,0,0,0.6)' : 'none',
+                width: 7, height: 7, borderRadius: '50%',
+                background: session.state === 'playing' ? ACCENT : 'rgba(255,255,255,0.2)',
+                boxShadow: session.state === 'playing' ? `0 0 8px ${ACCENT}` : 'none',
+                flexShrink: 0,
+                animation: session.state === 'playing' ? 'livePulse 2s ease-in-out infinite' : 'none',
+              }} />
+              <span style={{
+                fontSize: 13, fontWeight: 600, color: TEXT_SECONDARY,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>
-                {displayArt ? (
-                  <img src={displayArt} alt={session.currentTrack?.album ?? ''}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                ) : (
-                  <div style={{ width: '100%', height: '100%' }} />
-                )}
-              </div>
-            )
-          })()}
-
-          {session.currentTrack ? (
-            <div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, lineHeight: 1.2 }}>{session.currentTrack.title}</h1>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>{session.currentTrack.artist}</p>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>{session.currentTrack.album}</p>
+                {session.name || session.hostName}
+              </span>
+              {session.state === 'playing' && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, color: ACCENT,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  background: `rgba(229,160,13,0.12)`, border: `1px solid rgba(229,160,13,0.25)`,
+                  borderRadius: 10, padding: '2px 7px', flexShrink: 0,
+                }}>LIVE</span>
+              )}
             </div>
-          ) : (
-            <h1 style={{ fontSize: 18, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>
-              {session.state === 'stopped' ? 'Nothing playing' : 'Loading…'}
-            </h1>
+            <span style={{
+              fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.15em',
+              color: TEXT_MUTED, background: SURFACE,
+              padding: '3px 8px', borderRadius: 6, flexShrink: 0,
+            }}>{code}</span>
+          </header>
+
+          {/* ── Album art ──────────────────────────────────────────────────── */}
+          <div style={{ padding: '8px 24px 0', flexShrink: 0 }}>
+            <div style={{
+              width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
+              background: 'rgba(255,255,255,0.04)',
+              boxShadow: displayArt ? '0 16px 48px rgba(0,0,0,0.7)' : 'none',
+            }}>
+              {displayArt ? (
+                <img src={displayArt} alt={currentTrack?.album ?? ''}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ) : (
+                <div style={{
+                  width: '100%', height: '100%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1">
+                    <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Track info + vote ──────────────────────────────────────────── */}
+          <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+            {currentTrack ? (
+              <>
+                <h1 style={{
+                  fontSize: 22, fontWeight: 700, lineHeight: 1.2, marginBottom: 4,
+                  color: TEXT_PRIMARY,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {currentTrack.title}
+                </h1>
+                <p style={{
+                  fontSize: 14, color: TEXT_SECONDARY, marginBottom: 2,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {currentTrack.artist}
+                  {currentTrack.album ? <span style={{ color: TEXT_MUTED }}> · {currentTrack.album}</span> : null}
+                </p>
+              </>
+            ) : (
+              <h1 style={{ fontSize: 17, fontWeight: 600, color: TEXT_MUTED }}>
+                {session.state === 'stopped' ? 'Nothing playing' : 'Loading…'}
+              </h1>
+            )}
+
+            <ProgressBar session={session} />
+
+            {/* Vote buttons for current track (if it's in the queue) */}
+            {currentTrack && session.queue[session.currentIndex] && (
+              <VoteButtons
+                track={session.queue[session.currentIndex]}
+                myUserId={myUserId}
+                onVote={handleVote}
+              />
+            )}
+          </div>
+
+          {/* ── Participants ───────────────────────────────────────────────── */}
+          {participants.length > 0 && (
+            <div style={{ padding: '16px 20px 0' }}>
+              <ParticipantsStrip participants={participants} hostUserId={session.hostUserId} />
+            </div>
           )}
 
-          <ProgressBar session={session} />
-        </section>
-
-        {/* Participants */}
-        {participants.length > 0 && (
-          <section style={{ paddingBottom: 20 }}>
-            <ParticipantsStrip participants={participants} hostUserId={session.hostUserId} />
-          </section>
-        )}
-
-        {/* Tab switcher */}
-        <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          {(['queue', 'search'] as const).map(tab => (
+          {/* ── Search bar (tappable pill) ─────────────────────────────────── */}
+          <div style={{ padding: '12px 20px 4px', flexShrink: 0 }}>
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setShowSearch(true)}
               style={{
-                flex: 1, padding: '10px 0',
-                background: 'none', border: 'none',
-                borderBottom: activeTab === tab ? '2px solid var(--accent, #a78bfa)' : '2px solid transparent',
-                color: activeTab === tab ? '#fff' : 'rgba(255,255,255,0.4)',
-                fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                transition: 'color 0.15s', marginBottom: -1,
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                background: 'rgba(255,255,255,0.07)', border: `1px solid ${BORDER}`,
+                borderRadius: 22, padding: '11px 18px',
+                cursor: 'pointer', fontFamily: FONT,
+                transition: 'background 0.2s',
               }}
             >
-              {tab === 'queue' ? 'Queue' : 'Search'}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT_MUTED} strokeWidth="2">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <span style={{ fontSize: 14, color: TEXT_MUTED }}>Search to add a track…</span>
             </button>
-          ))}
-        </div>
+          </div>
 
-        {/* Queue tab */}
-        {activeTab === 'queue' && (
-          <section style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))' }}>
-            {session.queue.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '32px 0' }}>
-                Queue is empty — search for tracks to add!
-              </p>
+          {/* ── Queue ─────────────────────────────────────────────────────── */}
+          <div style={{ flex: 1, padding: '16px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom, 0px))' }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, color: TEXT_MUTED,
+              letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
+            }}>
+              Up Next
+            </div>
+
+            {upcomingQueue.length === 0 ? (
+              <div style={{
+                textAlign: 'center', padding: '32px 0',
+                color: TEXT_MUTED, fontSize: 13, lineHeight: 1.6,
+              }}>
+                Queue is empty —{' '}
+                <button
+                  onClick={() => setShowSearch(true)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: ACCENT, fontFamily: FONT, fontSize: 13, padding: 0,
+                    textDecoration: 'underline', textUnderlineOffset: 3,
+                  }}
+                >
+                  search for tracks
+                </button>{' '}to add!
+              </div>
             ) : (
-              session.queue.map((track, i) => (
+              upcomingQueue.map((track, i) => (
                 <QueueRow
-                  key={`${track.uri}-${i}`}
+                  key={`${track.uri}-${session.currentIndex + 1 + i}`}
                   track={track}
-                  isCurrentTrack={i === session.currentIndex}
+                  isCurrentTrack={false}
                   myUserId={myUserId}
                   onVote={handleVote}
                 />
               ))
             )}
-          </section>
-        )}
-
-        {/* Search tab */}
-        {activeTab === 'search' && (
-          <section style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))' }}>
-            <SearchSection
-              onAddTrack={handleAddTrack}
-              onPlayNext={handlePlayNext}
-              onSearch={handleSearch}
-              onBrowseArtist={handleBrowseArtist}
-              onBrowseAlbum={handleBrowseAlbum}
-              onBrowsePlaylist={handleBrowsePlaylist}
-              searchResults={searchResults}
-              searchArtists={searchArtists}
-              searchAlbums={searchAlbums}
-              searchPlaylists={searchPlaylists}
-              browseResults={browseResults}
-              searching={searching}
-              browsing={browsing}
-              myDisplayName={myDisplayName}
-              queue={session.queue}
-            />
-          </section>
-        )}
-
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
