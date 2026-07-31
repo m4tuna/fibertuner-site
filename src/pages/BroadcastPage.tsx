@@ -4,6 +4,8 @@ import { fetchAlbumArt } from '../lib/albumArt'
 import type {
   BroadcastSession,
   BroadcastTrack,
+  BroadcastArtist,
+  BroadcastAlbum,
   BroadcastParticipant,
   BroadcastCommand,
 } from '../lib/broadcastTypes'
@@ -11,7 +13,6 @@ import type {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function extractCode(): string {
-  // Matches /broadcast/XXXXX
   const m = window.location.pathname.match(/\/broadcast\/([A-Z0-9]{1,10})/i)
   return m ? m[1].toUpperCase() : ''
 }
@@ -35,9 +36,10 @@ function randomUserId(): string {
   return `guest-${Math.random().toString(36).slice(2, 10)}`
 }
 
-// A session is "ended" if it has expired OR if state is 'stopped' and hasn't
-// been updated in the last 2 minutes (guards against the initial placeholder
-// row that startBroadcast writes with state='stopped' before the first poll).
+function getSavedName(): string | null {
+  try { return localStorage.getItem('broadcastDisplayName') } catch { return null }
+}
+
 function isSessionEnded(session: BroadcastSession): boolean {
   if (new Date(session.expiresAt) < new Date()) return true
   if (session.state === 'stopped') {
@@ -47,7 +49,6 @@ function isSessionEnded(session: BroadcastSession): boolean {
   return false
 }
 
-// Map DB snake_case row → camelCase BroadcastSession
 function rowToSession(row: Record<string, unknown>): BroadcastSession {
   return {
     code:          row.code as string,
@@ -77,17 +78,12 @@ function JoinScreen({
   artUrl: string | null
   onJoin: (name: string) => void
 }) {
-  const [name, setName] = useState(() => {
-    try { return localStorage.getItem('broadcastDisplayName') || '' } catch { return '' }
-  })
+  const [name, setName] = useState(() => getSavedName() || '')
   const inputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { inputRef.current?.focus() }, [])
 
   const sessionTitle = session.name || `${session.hostName}'s Broadcast`
-  const upNext = session.queue.slice(
-    session.currentIndex + 1,
-    session.currentIndex + 4
-  )
+  const upNext = session.queue.slice(session.currentIndex + 1, session.currentIndex + 4)
 
   return (
     <div style={{
@@ -95,7 +91,6 @@ function JoinScreen({
       fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif',
       display: 'flex', flexDirection: 'column',
     }}>
-      {/* Art hero — blurred bg + centered image */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '1', maxHeight: 280, overflow: 'hidden', flexShrink: 0 }}>
         {artUrl ? (
           <>
@@ -129,7 +124,6 @@ function JoinScreen({
             </svg>
           </div>
         )}
-        {/* Bottom gradient fade into page */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, zIndex: 2,
           background: 'linear-gradient(to bottom, transparent, #0a0a0a)',
@@ -138,17 +132,13 @@ function JoinScreen({
 
       <div style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 20px', paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box' }}>
 
-        {/* LIVE badge + session title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, marginTop: 4 }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 5,
             background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)',
             borderRadius: 20, padding: '3px 9px',
           }}>
-            <div style={{
-              width: 6, height: 6, borderRadius: '50%', background: '#4ade80',
-              boxShadow: '0 0 6px #4ade80',
-            }} />
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
             <span style={{ fontSize: 10, fontWeight: 700, color: '#4ade80', letterSpacing: '0.08em' }}>LIVE</span>
           </div>
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>
@@ -156,11 +146,8 @@ function JoinScreen({
           </span>
         </div>
 
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20, lineHeight: 1.2, color: '#fff' }}>
-          {sessionTitle}
-        </h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20, lineHeight: 1.2, color: '#fff' }}>{sessionTitle}</h1>
 
-        {/* Now playing */}
         {session.currentTrack && (
           <div style={{
             background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
@@ -170,9 +157,7 @@ function JoinScreen({
               Now Playing
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {artUrl && (
-                <img src={artUrl} alt="" style={{ width: 40, height: 40, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />
-              )}
+              {artUrl && <img src={artUrl} alt="" style={{ width: 40, height: 40, borderRadius: 5, objectFit: 'cover', flexShrink: 0 }} />}
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {session.currentTrack.title}
@@ -186,7 +171,6 @@ function JoinScreen({
           </div>
         )}
 
-        {/* Up next */}
         {upNext.length > 0 && (
           <div style={{
             background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
@@ -204,12 +188,8 @@ function JoinScreen({
                     <div style={{ width: 28, height: 28, borderRadius: 3, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
                   )}
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {t.title}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {t.artist}
-                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.artist}</div>
                   </div>
                 </div>
               ))}
@@ -217,7 +197,6 @@ function JoinScreen({
           </div>
         )}
 
-        {/* Name input + join */}
         <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>
           What should we call you?
         </div>
@@ -285,19 +264,13 @@ function AppBanner({ onDismiss }: { onDismiss: () => void }) {
       </div>
       <a
         href="https://fibertuner.com"
-        style={{
-          fontSize: 12, fontWeight: 600, color: 'var(--accent, #a78bfa)',
-          textDecoration: 'none', whiteSpace: 'nowrap',
-        }}
+        style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent, #a78bfa)', textDecoration: 'none', whiteSpace: 'nowrap' }}
       >
         Get App →
       </a>
       <button
         onClick={onDismiss}
-        style={{
-          background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)',
-          cursor: 'pointer', fontSize: 18, padding: '0 4px', lineHeight: 1,
-        }}
+        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 18, padding: '0 4px', lineHeight: 1 }}
         aria-label="Dismiss"
       >
         ×
@@ -329,9 +302,7 @@ function ProgressBar({ session }: { session: BroadcastSession }) {
 
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{
-        height: 3, background: 'rgba(255,255,255,0.12)', borderRadius: 2, position: 'relative',
-      }}>
+      <div style={{ height: 3, background: 'rgba(255,255,255,0.12)', borderRadius: 2, position: 'relative' }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0,
           width: `${pct}%`, background: 'var(--accent, #a78bfa)',
@@ -351,10 +322,7 @@ function ProgressBar({ session }: { session: BroadcastSession }) {
 function ParticipantsStrip({ participants, hostUserId }: { participants: BroadcastParticipant[]; hostUserId: string }) {
   if (!participants.length) return null
   return (
-    <div style={{
-      display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4,
-      scrollbarWidth: 'none',
-    }}>
+    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
       {participants.map(p => (
         <div key={p.userId} style={{
           display: 'flex', alignItems: 'center', gap: 6,
@@ -372,10 +340,7 @@ function ParticipantsStrip({ participants, hostUserId }: { participants: Broadca
           </div>
           <span style={{ color: 'rgba(255,255,255,0.8)' }}>{p.displayName}</span>
           {p.isHost && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, color: '#a78bfa',
-              letterSpacing: '0.05em', textTransform: 'uppercase',
-            }}>HOST</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: '#a78bfa', letterSpacing: '0.05em', textTransform: 'uppercase' }}>HOST</span>
           )}
         </div>
       ))}
@@ -386,34 +351,31 @@ function ParticipantsStrip({ participants, hostUserId }: { participants: Broadca
 // ── Queue track row ────────────────────────────────────────────────────────────
 
 function QueueRow({
-  track, isCurrentTrack, myUserId, onVote,
+  track, isCurrentTrack, myUserId, onVote, rowRef,
 }: {
   track: BroadcastTrack
   isCurrentTrack: boolean
   myUserId: string
   onVote: (uri: string, vote: 'up' | 'down') => void
+  rowRef?: React.Ref<HTMLDivElement>
 }) {
   const myUp = track.votes.up.includes(myUserId)
   const myDown = track.votes.down.includes(myUserId)
 
   return (
-    <div style={{
+    <div ref={rowRef} style={{
       padding: '10px 0',
       borderBottom: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', alignItems: 'center', gap: 10,
       borderLeft: isCurrentTrack ? '2px solid var(--accent, #a78bfa)' : '2px solid transparent',
       paddingLeft: isCurrentTrack ? 10 : 0,
+      background: isCurrentTrack ? 'rgba(167,139,250,0.05)' : 'transparent',
     }}>
-      {/* Art */}
       {track.artUrl ? (
         <img src={track.artUrl} alt="" style={{ width: 38, height: 38, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
       ) : (
-        <div style={{
-          width: 38, height: 38, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0,
-        }} />
+        <div style={{ width: 38, height: 38, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
       )}
-
-      {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 13, fontWeight: 600, color: isCurrentTrack ? 'var(--accent, #a78bfa)' : '#fff',
@@ -424,8 +386,6 @@ function QueueRow({
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>{track.artist}{track.addedBy ? ` · added by ${track.addedBy}` : ''}</div>
       </div>
-
-      {/* Vote buttons */}
       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
         <button
           onClick={() => onVote(track.uri, 'up')}
@@ -458,57 +418,88 @@ function QueueRow({
 
 // ── Search section ─────────────────────────────────────────────────────────────
 
+type DrillView =
+  | { kind: 'results' }
+  | { kind: 'artist-albums'; artist: BroadcastArtist; albums: BroadcastAlbum[] }
+  | { kind: 'album-tracks'; album: BroadcastAlbum; tracks: BroadcastTrack[] }
+
 function SearchSection({
   onAddTrack,
   onPlayNext,
-  broadcastCode,
-  myUserId,
+  onSearch,
+  onBrowseArtist,
+  onBrowseAlbum,
+  searchResults,
+  searchArtists,
+  searchAlbums,
+  browseResults,
+  searching,
+  browsing,
   myDisplayName,
   queue,
 }: {
   onAddTrack: (track: BroadcastTrack) => void
   onPlayNext: (track: BroadcastTrack) => void
-  broadcastCode: string
-  myUserId: string
+  onSearch: (query: string) => void
+  onBrowseArtist: (artist: BroadcastArtist) => void
+  onBrowseAlbum: (album: BroadcastAlbum) => void
+  searchResults: BroadcastTrack[]
+  searchArtists: BroadcastArtist[]
+  searchAlbums: BroadcastAlbum[]
+  browseResults: { kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] } | null
+  searching: boolean
+  browsing: boolean
   myDisplayName: string
   queue: BroadcastTrack[]
 }) {
   const [query, setQuery] = useState('')
-  const [searching, setSearching] = useState(false)
-  const [results, setResults] = useState<BroadcastTrack[]>([])
+  const [drillView, setDrillView] = useState<DrillView>({ kind: 'results' })
+  const [drillHistory, setDrillHistory] = useState<DrillView[]>([])
+  const [pendingArtist, setPendingArtist] = useState<BroadcastArtist | null>(null)
+  const [pendingAlbum, setPendingAlbum] = useState<BroadcastAlbum | null>(null)
   const [confirmTrack, setConfirmTrack] = useState<BroadcastTrack | null>(null)
+  const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set())
+  const [recentlyQueued, setRecentlyQueued] = useState<Set<string>>(new Set())
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
-  // Subscribe to search results via Broadcast channel
+  // When browseResults arrive, advance the drill view (push current view onto history first)
   useEffect(() => {
-    const ch = supabase.channel(`broadcast:${broadcastCode}`)
-      .on('broadcast', { event: 'command' }, ({ payload }: { payload: BroadcastCommand }) => {
-        if (payload.type === 'search-results') {
-          setResults(payload.results)
-          setSearching(false)
-        }
-      })
-      .subscribe()
-    channelRef.current = ch
-    return () => { ch.unsubscribe() }
-  }, [broadcastCode])
-
-  const doSearch = useCallback((q: string) => {
-    if (!q.trim()) { setResults([]); setSearching(false); return }
-    setSearching(true)
-    const requestId = Math.random().toString(36).slice(2)
-    const cmd: BroadcastCommand = { type: 'search-request', query: q.trim(), requestId, userId: myUserId }
-    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
-    // Auto-clear searching after 10s timeout
-    setTimeout(() => setSearching(false), 10000)
-  }, [broadcastCode, myUserId])
+    if (!browseResults) return
+    if (browseResults.kind === 'albums' && pendingArtist) {
+      setDrillHistory(h => [...h, drillView])
+      setDrillView({ kind: 'artist-albums', artist: pendingArtist, albums: browseResults.albums })
+      setPendingArtist(null)
+    } else if (browseResults.kind === 'tracks' && pendingAlbum) {
+      setDrillHistory(h => [...h, drillView])
+      setDrillView({ kind: 'album-tracks', album: pendingAlbum, tracks: browseResults.tracks })
+      setPendingAlbum(null)
+    }
+  }, [browseResults]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value
     setQuery(q)
+    setDrillView({ kind: 'results' })
+    setDrillHistory([])
+    setPendingArtist(null)
+    setPendingAlbum(null)
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => doSearch(q), 300)
+    debounceRef.current = setTimeout(() => onSearch(q), 300)
+  }
+
+  const handleClear = () => {
+    setQuery('')
+    setDrillView({ kind: 'results' })
+    setDrillHistory([])
+    setPendingArtist(null)
+    setPendingAlbum(null)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    onSearch('')
+  }
+
+  const flashAdded = (uri: string, set: React.Dispatch<React.SetStateAction<Set<string>>>) => {
+    set(prev => new Set([...prev, uri]))
+    setTimeout(() => set(prev => { const n = new Set(prev); n.delete(uri); return n }), 2000)
   }
 
   const handleAdd = (track: BroadcastTrack) => {
@@ -516,39 +507,115 @@ function SearchSection({
     if (isDuplicate) {
       setConfirmTrack(track)
     } else {
-      onAddTrack(track)
-      setResults([])
-      setQuery('')
+      onAddTrack({ ...track, addedBy: myDisplayName, votes: { up: [], down: [] } })
+      flashAdded(track.uri, setRecentlyQueued)
     }
   }
 
   const handlePlayNext = (track: BroadcastTrack) => {
-    onPlayNext(track)
-    setResults([])
-    setQuery('')
+    onPlayNext({ ...track, addedBy: myDisplayName, votes: { up: [], down: [] } })
+    flashAdded(track.uri, setRecentlyAdded)
   }
+
+  const handleArtistClick = (artist: BroadcastArtist) => {
+    setPendingArtist(artist)
+    setPendingAlbum(null)
+    onBrowseArtist(artist)
+  }
+
+  const handleAlbumClick = (album: BroadcastAlbum) => {
+    setPendingAlbum(album)
+    setPendingArtist(null)
+    onBrowseAlbum(album)
+  }
+
+  const goBack = () => {
+    setPendingArtist(null)
+    setPendingAlbum(null)
+    if (drillHistory.length > 0) {
+      const prev = drillHistory[drillHistory.length - 1]
+      setDrillHistory(h => h.slice(0, -1))
+      setDrillView(prev)
+    } else {
+      setDrillView({ kind: 'results' })
+    }
+  }
+
+  const hasResults = searchArtists.length > 0 || searchAlbums.length > 0 || searchResults.length > 0
+
+  // Determine what list of tracks to show in track rows
+  const tracksToShow = drillView.kind === 'album-tracks'
+    ? drillView.tracks
+    : drillView.kind === 'results'
+    ? searchResults
+    : []
+
+  const sectionHeader = (label: string) => (
+    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '10px 14px 6px' }}>
+      {label}
+    </div>
+  )
 
   return (
     <div>
+      {/* Back button when drilling */}
+      {drillView.kind !== 'results' && (
+        <button
+          onClick={goBack}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'rgba(255,255,255,0.5)', fontSize: 13, fontFamily: 'inherit',
+            padding: '0 0 12px', fontWeight: 500,
+          }}
+        >
+          ← Back
+        </button>
+      )}
+
       <div style={{ position: 'relative' }}>
         <input
           value={query}
           onChange={handleInput}
           placeholder="Artists, albums, tracks…"
           style={{
-            width: '100%', padding: '11px 16px',
+            width: '100%', padding: '11px 44px 11px 16px',
             background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10, color: '#fff', fontSize: 16, outline: 'none',
             fontFamily: 'inherit', boxSizing: 'border-box', WebkitAppearance: 'none',
           }}
         />
-        {searching && (
+        {(searching || browsing) && (
           <span style={{
             position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-            fontSize: 11, color: 'rgba(255,255,255,0.4)',
-          }}>Searching…</span>
+            fontSize: 11, color: 'rgba(255,255,255,0.4)', pointerEvents: 'none',
+          }}>{searching ? 'Searching…' : 'Loading…'}</span>
+        )}
+        {query && !searching && !browsing && (
+          <button
+            onClick={handleClear}
+            aria-label="Clear search"
+            style={{
+              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+              background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%',
+              width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1,
+              padding: 0,
+            }}
+          >×</button>
         )}
       </div>
+
+      {/* Empty state when search completes but has no results */}
+      {drillView.kind === 'results' && query && !searching && !browsing &&
+        searchResults.length === 0 && searchArtists.length === 0 && searchAlbums.length === 0 && (
+        <div style={{
+          textAlign: 'center', padding: '32px 0',
+          color: 'rgba(255,255,255,0.3)', fontSize: 13,
+        }}>
+          No results for <strong style={{ color: 'rgba(255,255,255,0.5)' }}>"{query}"</strong>
+        </div>
+      )}
 
       {/* Confirm duplicate modal */}
       {confirmTrack && (
@@ -569,7 +636,11 @@ function SearchSection({
                 flex: 1, padding: '11px 0', background: 'rgba(255,255,255,0.08)',
                 border: 'none', borderRadius: 9, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
               }}>Cancel</button>
-              <button onClick={() => { onAddTrack(confirmTrack); setConfirmTrack(null); setResults([]); setQuery('') }} style={{
+              <button onClick={() => {
+                onAddTrack({ ...confirmTrack, addedBy: myDisplayName, votes: { up: [], down: [] } })
+                flashAdded(confirmTrack.uri, setRecentlyQueued)
+                setConfirmTrack(null)
+              }} style={{
                 flex: 1, padding: '11px 0', background: 'var(--accent, #a78bfa)',
                 border: 'none', borderRadius: 9, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
               }}>Add Anyway</button>
@@ -578,50 +649,213 @@ function SearchSection({
         </div>
       )}
 
-      {results.length > 0 && (
+      {/* Artist albums drill-down */}
+      {drillView.kind === 'artist-albums' && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{drillView.artist.title}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>Select an album</div>
+          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
+            {drillView.albums.map((album, i) => (
+              <div
+                key={album.ratingKey}
+                onClick={() => handleAlbumClick(album)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
+                  borderBottom: i < drillView.albums.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {album.artUrl ? (
+                  <img src={album.artUrl} alt="" style={{ width: 38, height: 38, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 38, height: 38, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.title}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{album.year ?? ''}</div>
+                </div>
+                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>›</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Top-level search results: Artists + Albums + Tracks sections */}
+      {drillView.kind === 'results' && hasResults && (
         <div style={{ marginTop: 8, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
-          {results.map((r, i) => (
-            <div
-              key={`${r.uri}-${i}`}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
-                borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-              }}
-            >
-              {r.artUrl ? (
-                <img src={r.artUrl} alt="" style={{ width: 36, height: 36, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
-              ) : (
-                <div style={{ width: 36, height: 36, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>{r.title}</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist} · {r.album}</div>
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                <button
-                  onClick={() => handlePlayNext({ ...r, addedBy: myDisplayName, votes: { up: [], down: [] } })}
-                  title="Play Next"
+          {/* Artists section */}
+          {searchArtists.length > 0 && (
+            <>
+              {sectionHeader('Artists')}
+              {searchArtists.map((artist) => (
+                <div
+                  key={artist.ratingKey}
+                  onClick={() => handleArtistClick(artist)}
                   style={{
-                    padding: '6px 10px', background: 'rgba(167,139,250,0.15)',
-                    border: '1px solid rgba(167,139,250,0.3)', borderRadius: 7,
-                    color: '#a78bfa', cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                    fontFamily: 'inherit', whiteSpace: 'nowrap',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 14px', background: 'rgba(255,255,255,0.03)',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    cursor: 'pointer',
                   }}
-                >▶︎ Next</button>
-                <button
-                  onClick={() => handleAdd({ ...r, addedBy: myDisplayName, votes: { up: [], down: [] } })}
-                  title="Add to Queue"
+                >
+                  {artist.artUrl ? (
+                    <img src={artist.artUrl} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {artist.title}
+                  </div>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>›</span>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Albums section */}
+          {searchAlbums.length > 0 && (
+            <>
+              {sectionHeader('Albums')}
+              {searchAlbums.map((album) => (
+                <div
+                  key={album.ratingKey}
+                  onClick={() => handleAlbumClick(album)}
                   style={{
-                    padding: '6px 10px', background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)', borderRadius: 7,
-                    color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                    fontFamily: 'inherit', whiteSpace: 'nowrap',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 14px', background: 'rgba(255,255,255,0.03)',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    cursor: 'pointer',
                   }}
-                >+ Queue</button>
-              </div>
-            </div>
-          ))}
+                >
+                  {album.artUrl ? (
+                    <img src={album.artUrl} alt="" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 34, height: 34, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.title}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{album.artistName}</div>
+                  </div>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>›</span>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Tracks section */}
+          {searchResults.length > 0 && (
+            <>
+              {(searchArtists.length > 0 || searchAlbums.length > 0) && sectionHeader('Tracks')}
+              {tracksToShow.map((r, i) => {
+                const queued = recentlyQueued.has(r.uri)
+                const nexted = recentlyAdded.has(r.uri)
+                return (
+                  <div
+                    key={`${r.uri}-${i}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
+                      borderBottom: i < tracksToShow.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                    }}
+                  >
+                    {r.artUrl ? (
+                      <img src={r.artUrl} alt="" style={{ width: 36, height: 36, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 36, height: 36, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>{r.title}</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist} · {r.album}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <button
+                        onClick={() => handlePlayNext(r)}
+                        style={{
+                          padding: '6px 10px',
+                          background: nexted ? 'rgba(134,239,172,0.15)' : 'rgba(167,139,250,0.15)',
+                          border: nexted ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(167,139,250,0.3)',
+                          borderRadius: 7,
+                          color: nexted ? '#86efac' : '#a78bfa',
+                          cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                          fontFamily: 'inherit', whiteSpace: 'nowrap',
+                          transition: 'all 0.2s',
+                        }}
+                      >{nexted ? '✓ Next' : '▶︎ Next'}</button>
+                      <button
+                        onClick={() => handleAdd(r)}
+                        style={{
+                          padding: '6px 10px',
+                          background: queued ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)',
+                          border: queued ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 7,
+                          color: queued ? '#86efac' : 'rgba(255,255,255,0.8)',
+                          cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                          fontFamily: 'inherit', whiteSpace: 'nowrap',
+                          transition: 'all 0.2s',
+                        }}
+                      >{queued ? '✓ Added' : '+ Queue'}</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Album tracks drill-down */}
+      {drillView.kind === 'album-tracks' && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{drillView.album.title}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>{drillView.album.artistName}</div>
+          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
+            {drillView.tracks.map((r, i) => {
+              const queued = recentlyQueued.has(r.uri)
+              const nexted = recentlyAdded.has(r.uri)
+              return (
+                <div
+                  key={`${r.uri}-${i}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
+                    borderBottom: i < drillView.tracks.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  }}
+                >
+                  <div style={{ width: 22, minWidth: 22, textAlign: 'right', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{i + 1}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>{r.title}</div>
+                    {r.artist && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist}</div>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={() => handlePlayNext(r)}
+                      style={{
+                        padding: '6px 10px',
+                        background: nexted ? 'rgba(134,239,172,0.15)' : 'rgba(167,139,250,0.15)',
+                        border: nexted ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(167,139,250,0.3)',
+                        borderRadius: 7, color: nexted ? '#86efac' : '#a78bfa',
+                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                        fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.2s',
+                      }}
+                    >{nexted ? '✓ Next' : '▶︎ Next'}</button>
+                    <button
+                      onClick={() => handleAdd(r)}
+                      style={{
+                        padding: '6px 10px',
+                        background: queued ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)',
+                        border: queued ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 7, color: queued ? '#86efac' : 'rgba(255,255,255,0.8)',
+                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                        fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.2s',
+                      }}
+                    >{queued ? '✓ Added' : '+ Queue'}</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -642,19 +876,31 @@ export default function BroadcastPage() {
   const [showBanner, setShowBanner] = useState(true)
   const [activeTab, setActiveTab] = useState<'queue' | 'search'>('queue')
   const [artUrl, setArtUrl] = useState<string | null>(null)
+  const [searchResults, setSearchResults] = useState<BroadcastTrack[]>([])
+  const [searchArtists, setSearchArtists] = useState<BroadcastArtist[]>([])
+  const [searchAlbums, setSearchAlbums] = useState<BroadcastAlbum[]>([])
+  const [browseResults, setBrowseResults] = useState<{ kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] } | null>(null)
+  const [searching, setSearching] = useState(false)
+  const [browsing, setBrowsing] = useState(false)
 
-  // Guest identity
   const [myUserId] = useState<string>(() => {
-    try { return localStorage.getItem('broadcastUserId') || (() => { const id = randomUserId(); localStorage.setItem('broadcastUserId', id); return id })() } catch { return randomUserId() }
+    try {
+      const saved = localStorage.getItem('broadcastUserId')
+      if (saved) return saved
+      const id = randomUserId()
+      localStorage.setItem('broadcastUserId', id)
+      return id
+    } catch { return randomUserId() }
   })
-  const [myDisplayName, setMyDisplayName] = useState<string>(() => {
-    try { return localStorage.getItem('broadcastDisplayName') || '' } catch { return '' }
-  })
+  const [myDisplayName, setMyDisplayName] = useState<string>(() => getSavedName() || '')
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deepLinkAttempted = useRef(false)
+  const currentTrackRowRef = useRef<HTMLDivElement | null>(null)
 
-  // Fetch session row — no expiry filter so we can show context even for ended sessions
+  // Fetch initial session row
   useEffect(() => {
     if (!code) {
       setError('Invalid broadcast code.')
@@ -678,19 +924,22 @@ export default function BroadcastPage() {
         setLoading(false)
 
         if (!isSessionEnded(s)) {
-          // Fire deep link only for live sessions — opens the app if installed
           if (!deepLinkAttempted.current) {
             deepLinkAttempted.current = true
             window.location.href = `fibertuner://broadcast/${code}`
           }
-          // Always show the name screen so users can change their name.
-          // JoinScreen pre-fills the stored name so returning users just tap Join.
-          setShowNameModal(true)
+          // Auto-rejoin returning users — skip the name modal if we have a saved name
+          const savedName = getSavedName()
+          if (savedName) {
+            setJoined(true)
+          } else {
+            setShowNameModal(true)
+          }
         }
       })
   }, [code])
 
-  // Fetch album art via shared utility (races MusicBrainz and iTunes)
+  // Fetch album art
   useEffect(() => {
     if (!session?.currentTrack) return
     const { artist, album } = session.currentTrack
@@ -699,7 +948,8 @@ export default function BroadcastPage() {
     }
   }, [session?.currentTrack?.title])
 
-  // Subscribe to Postgres Realtime changes
+  // Single channel: postgres_changes + presence + broadcast (search results)
+  // All subscriptions on one channel so nothing stomps on each other.
   useEffect(() => {
     if (!code || !joined) return
 
@@ -714,8 +964,22 @@ export default function BroadcastPage() {
       )
       .on('presence', { event: 'sync' }, () => {
         const state = ch.presenceState() as Record<string, Array<{ userId: string; displayName: string; isHost: boolean; joinedAt: number }>>
-        const all: BroadcastParticipant[] = Object.values(state).flat()
-        setParticipants(all)
+        setParticipants(Object.values(state).flat())
+      })
+      .on('broadcast', { event: 'command' }, ({ payload }: { payload: BroadcastCommand }) => {
+        if (payload.type === 'search-results') {
+          setSearchResults(payload.results)
+          setSearchArtists((payload as any).artists ?? [])
+          setSearchAlbums((payload as any).albums ?? [])
+          setBrowseResults(null)
+          setSearching(false)
+          if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+        }
+        if (payload.type === 'browse-results') {
+          setBrowseResults({ kind: payload.kind, albums: payload.albums, tracks: payload.tracks })
+          setBrowsing(false)
+          if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
+        }
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -727,15 +991,35 @@ export default function BroadcastPage() {
     return () => { ch.unsubscribe() }
   }, [code, joined, myUserId, myDisplayName])
 
+  // Polling fallback — ensures live track/queue updates even if Realtime postgres_changes
+  // doesn't fire (e.g. Realtime not enabled on the table, or connection hiccup).
+  useEffect(() => {
+    if (!code || !joined) return
+    const id = setInterval(async () => {
+      const { data } = await supabase.from('broadcast_sessions').select('*').eq('code', code).single()
+      if (data) setSession(rowToSession(data as Record<string, unknown>))
+    }, 5000)
+    return () => clearInterval(id)
+  }, [code, joined])
+
+  // Auto-scroll queue to current track on initial load or track change
+  useEffect(() => {
+    if (!joined || !session?.currentIndex) return
+    const el = currentTrackRowRef.current
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [joined, session?.currentIndex])
+
   const handleJoin = (name: string) => {
-    try { localStorage.setItem('broadcastDisplayName', name); localStorage.setItem('broadcastUserId', myUserId) } catch {}
+    try {
+      localStorage.setItem('broadcastDisplayName', name)
+      localStorage.setItem('broadcastUserId', myUserId)
+    } catch {}
     setMyDisplayName(name)
     setShowNameModal(false)
     setJoined(true)
   }
 
   const handleVote = useCallback((trackUri: string, vote: 'up' | 'down') => {
-    // Optimistic update
     setSession(prev => {
       if (!prev) return prev
       return {
@@ -752,11 +1036,9 @@ export default function BroadcastPage() {
         }),
       }
     })
-
-    // Send via already-subscribed Broadcast channel
     const cmd: BroadcastCommand = { type: 'vote', trackUri, vote, userId: myUserId, displayName: myDisplayName }
     channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
-  }, [code, myUserId, myDisplayName])
+  }, [myUserId, myDisplayName])
 
   const handleAddTrack = useCallback((track: BroadcastTrack) => {
     const cmd: BroadcastCommand = { type: 'add-track', track, addedBy: myDisplayName, userId: myUserId }
@@ -767,6 +1049,47 @@ export default function BroadcastPage() {
     const cmd: BroadcastCommand = { type: 'play-next', track, addedBy: myDisplayName, userId: myUserId }
     channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
   }, [myUserId, myDisplayName])
+
+  const handleSearch = useCallback((query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      setSearchArtists([])
+      setSearchAlbums([])
+      setBrowseResults(null)
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    setSearchResults([])
+    setSearchArtists([])
+    setSearchAlbums([])
+    setBrowseResults(null)
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    const requestId = Math.random().toString(36).slice(2)
+    const cmd: BroadcastCommand = { type: 'search-request', query: query.trim(), requestId, userId: myUserId }
+    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+    searchTimeoutRef.current = setTimeout(() => setSearching(false), 10000)
+  }, [myUserId])
+
+  const handleBrowseArtist = useCallback((artist: BroadcastArtist) => {
+    setBrowsing(true)
+    setBrowseResults(null)
+    if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
+    const requestId = Math.random().toString(36).slice(2)
+    const cmd: BroadcastCommand = { type: 'browse-artist', artistRatingKey: artist.ratingKey, requestId, userId: myUserId }
+    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+    browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
+  }, [myUserId])
+
+  const handleBrowseAlbum = useCallback((album: BroadcastAlbum) => {
+    setBrowsing(true)
+    setBrowseResults(null)
+    if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
+    const requestId = Math.random().toString(36).slice(2)
+    const cmd: BroadcastCommand = { type: 'browse-album', albumRatingKey: album.ratingKey, requestId, userId: myUserId }
+    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+    browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
+  }, [myUserId])
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -796,10 +1119,9 @@ export default function BroadcastPage() {
     const lastTrack = session?.currentTrack
     return (
       <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20, textAlign: 'center' }}>
-        {artUrl && (
+        {artUrl ? (
           <img src={artUrl} alt="" style={{ width: 96, height: 96, borderRadius: 12, objectFit: 'cover', opacity: 0.3, filter: 'grayscale(40%)' }} />
-        )}
-        {!artUrl && (
+        ) : (
           <div style={{
             width: 72, height: 72, borderRadius: '50%',
             background: 'rgba(255,255,255,0.05)',
@@ -822,9 +1144,7 @@ export default function BroadcastPage() {
               Broadcast Ended
             </span>
           </div>
-          {sessionName && (
-            <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px', color: '#fff' }}>{sessionName}</h2>
-          )}
+          {sessionName && <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px', color: '#fff' }}>{sessionName}</h2>}
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
             {sessionName ? 'This broadcast has ended.' : 'This broadcast link is no longer active.'}
           </p>
@@ -834,10 +1154,7 @@ export default function BroadcastPage() {
             </p>
           )}
         </div>
-        <a
-          href="https://fibertuner.com"
-          style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none', marginTop: 8 }}
-        >
+        <a href="https://fibertuner.com" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none', marginTop: 8 }}>
           fibertuner.com
         </a>
       </div>
@@ -850,10 +1167,8 @@ export default function BroadcastPage() {
 
   return (
     <div style={pageStyle}>
-      {/* App banner */}
       {showBanner && <AppBanner onDismiss={() => setShowBanner(false)} />}
 
-      {/* Header */}
       <header style={{
         padding: '14px 20px',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
@@ -876,14 +1191,11 @@ export default function BroadcastPage() {
         }}>{code}</span>
       </header>
 
-      {/* Host context */}
       <div style={{
         padding: '10px 20px',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         background: 'rgba(255,255,255,0.02)',
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.38)',
-        lineHeight: 1.6,
+        fontSize: 12, color: 'rgba(255,255,255,0.38)', lineHeight: 1.6,
       }}>
         <strong style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>{session.hostName}</strong>
         {' '}is broadcasting their Plex queue live on Fibertuner — add tracks and vote on what's next.
@@ -893,7 +1205,6 @@ export default function BroadcastPage() {
 
         {/* Now Playing */}
         <section style={{ paddingTop: 24, paddingBottom: 20 }}>
-          {/* Album art */}
           {(() => {
             const displayArt = artUrl || session.currentTrack?.artUrl
             return (
@@ -912,7 +1223,6 @@ export default function BroadcastPage() {
             )
           })()}
 
-          {/* Track info */}
           {session.currentTrack ? (
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, lineHeight: 1.2 }}>{session.currentTrack.title}</h1>
@@ -920,14 +1230,11 @@ export default function BroadcastPage() {
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>{session.currentTrack.album}</p>
             </div>
           ) : (
-            <div>
-              <h1 style={{ fontSize: 18, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>
-                {session.state === 'stopped' ? 'Nothing playing' : 'Loading…'}
-              </h1>
-            </div>
+            <h1 style={{ fontSize: 18, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>
+              {session.state === 'stopped' ? 'Nothing playing' : 'Loading…'}
+            </h1>
           )}
 
-          {/* Progress */}
           <ProgressBar session={session} />
         </section>
 
@@ -950,8 +1257,7 @@ export default function BroadcastPage() {
                 borderBottom: activeTab === tab ? '2px solid var(--accent, #a78bfa)' : '2px solid transparent',
                 color: activeTab === tab ? '#fff' : 'rgba(255,255,255,0.4)',
                 fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                transition: 'color 0.15s',
-                marginBottom: -1,
+                transition: 'color 0.15s', marginBottom: -1,
               }}
             >
               {tab === 'queue' ? 'Queue' : 'Search'}
@@ -974,6 +1280,7 @@ export default function BroadcastPage() {
                   isCurrentTrack={i === session.currentIndex}
                   myUserId={myUserId}
                   onVote={handleVote}
+                  rowRef={i === session.currentIndex ? currentTrackRowRef : undefined}
                 />
               ))
             )}
@@ -981,13 +1288,20 @@ export default function BroadcastPage() {
         )}
 
         {/* Search tab */}
-        {activeTab === 'search' && joined && (
+        {activeTab === 'search' && (
           <section style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom, 0px))' }}>
             <SearchSection
               onAddTrack={handleAddTrack}
               onPlayNext={handlePlayNext}
-              broadcastCode={code}
-              myUserId={myUserId}
+              onSearch={handleSearch}
+              onBrowseArtist={handleBrowseArtist}
+              onBrowseAlbum={handleBrowseAlbum}
+              searchResults={searchResults}
+              searchArtists={searchArtists}
+              searchAlbums={searchAlbums}
+              browseResults={browseResults}
+              searching={searching}
+              browsing={browsing}
               myDisplayName={myDisplayName}
               queue={session.queue}
             />

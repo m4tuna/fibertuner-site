@@ -182,7 +182,7 @@ function UserStats({ profiles }: { profiles: ProfileRow[] }) {
             {sorted.slice(0, 30).map(p => (
               <div key={p.user_id} className="user-list__row">
                 <img
-                  src={p.plex_thumb ?? ''}
+                  src={p.plex_thumb ?? undefined}
                   alt=""
                   className="user-list__avatar"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
