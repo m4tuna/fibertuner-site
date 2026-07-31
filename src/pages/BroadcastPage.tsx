@@ -6,6 +6,7 @@ import type {
   BroadcastTrack,
   BroadcastArtist,
   BroadcastAlbum,
+  BroadcastPlaylist,
   BroadcastParticipant,
   BroadcastCommand,
 } from '../lib/broadcastTypes'
@@ -422,6 +423,7 @@ type DrillView =
   | { kind: 'results' }
   | { kind: 'artist-albums'; artist: BroadcastArtist; albums: BroadcastAlbum[] }
   | { kind: 'album-tracks'; album: BroadcastAlbum; tracks: BroadcastTrack[] }
+  | { kind: 'playlist-tracks'; playlist: BroadcastPlaylist; tracks: BroadcastTrack[] }
 
 function SearchSection({
   onAddTrack,
@@ -429,9 +431,11 @@ function SearchSection({
   onSearch,
   onBrowseArtist,
   onBrowseAlbum,
+  onBrowsePlaylist,
   searchResults,
   searchArtists,
   searchAlbums,
+  searchPlaylists,
   browseResults,
   searching,
   browsing,
@@ -443,9 +447,11 @@ function SearchSection({
   onSearch: (query: string) => void
   onBrowseArtist: (artist: BroadcastArtist) => void
   onBrowseAlbum: (album: BroadcastAlbum) => void
+  onBrowsePlaylist: (playlist: BroadcastPlaylist) => void
   searchResults: BroadcastTrack[]
   searchArtists: BroadcastArtist[]
   searchAlbums: BroadcastAlbum[]
+  searchPlaylists: BroadcastPlaylist[]
   browseResults: { kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] } | null
   searching: boolean
   browsing: boolean
@@ -457,6 +463,7 @@ function SearchSection({
   const [drillHistory, setDrillHistory] = useState<DrillView[]>([])
   const [pendingArtist, setPendingArtist] = useState<BroadcastArtist | null>(null)
   const [pendingAlbum, setPendingAlbum] = useState<BroadcastAlbum | null>(null)
+  const [pendingPlaylist, setPendingPlaylist] = useState<BroadcastPlaylist | null>(null)
   const [confirmTrack, setConfirmTrack] = useState<BroadcastTrack | null>(null)
   const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set())
   const [recentlyQueued, setRecentlyQueued] = useState<Set<string>>(new Set())
@@ -473,6 +480,10 @@ function SearchSection({
       setDrillHistory(h => [...h, drillView])
       setDrillView({ kind: 'album-tracks', album: pendingAlbum, tracks: browseResults.tracks })
       setPendingAlbum(null)
+    } else if (browseResults.kind === 'tracks' && pendingPlaylist) {
+      setDrillHistory(h => [...h, drillView])
+      setDrillView({ kind: 'playlist-tracks', playlist: pendingPlaylist, tracks: browseResults.tracks })
+      setPendingPlaylist(null)
     }
   }, [browseResults]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -483,6 +494,7 @@ function SearchSection({
     setDrillHistory([])
     setPendingArtist(null)
     setPendingAlbum(null)
+    setPendingPlaylist(null)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => onSearch(q), 300)
   }
@@ -493,6 +505,7 @@ function SearchSection({
     setDrillHistory([])
     setPendingArtist(null)
     setPendingAlbum(null)
+    setPendingPlaylist(null)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     onSearch('')
   }
@@ -526,12 +539,21 @@ function SearchSection({
   const handleAlbumClick = (album: BroadcastAlbum) => {
     setPendingAlbum(album)
     setPendingArtist(null)
+    setPendingPlaylist(null)
     onBrowseAlbum(album)
+  }
+
+  const handlePlaylistClick = (playlist: BroadcastPlaylist) => {
+    setPendingPlaylist(playlist)
+    setPendingArtist(null)
+    setPendingAlbum(null)
+    onBrowsePlaylist(playlist)
   }
 
   const goBack = () => {
     setPendingArtist(null)
     setPendingAlbum(null)
+    setPendingPlaylist(null)
     if (drillHistory.length > 0) {
       const prev = drillHistory[drillHistory.length - 1]
       setDrillHistory(h => h.slice(0, -1))
@@ -541,7 +563,7 @@ function SearchSection({
     }
   }
 
-  const hasResults = searchArtists.length > 0 || searchAlbums.length > 0 || searchResults.length > 0
+  const hasResults = searchArtists.length > 0 || searchAlbums.length > 0 || searchPlaylists.length > 0 || searchResults.length > 0
 
   // Determine what list of tracks to show in track rows
   const tracksToShow = drillView.kind === 'album-tracks'
@@ -608,7 +630,7 @@ function SearchSection({
 
       {/* Empty state when search completes but has no results */}
       {drillView.kind === 'results' && query && !searching && !browsing &&
-        searchResults.length === 0 && searchArtists.length === 0 && searchAlbums.length === 0 && (
+        searchResults.length === 0 && searchArtists.length === 0 && searchAlbums.length === 0 && searchPlaylists.length === 0 && (
         <div style={{
           textAlign: 'center', padding: '32px 0',
           color: 'rgba(255,255,255,0.3)', fontSize: 13,
@@ -744,10 +766,48 @@ function SearchSection({
             </>
           )}
 
+          {/* Playlists section */}
+          {searchPlaylists.length > 0 && (
+            <>
+              {sectionHeader('Playlists')}
+              {searchPlaylists.map((playlist) => (
+                <div
+                  key={playlist.ratingKey}
+                  onClick={() => handlePlaylistClick(playlist)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 14px', background: 'rgba(255,255,255,0.03)',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {playlist.artUrl ? (
+                    <img src={playlist.artUrl} alt="" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 4, background: 'rgba(255,255,255,0.08)',
+                      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2">
+                        <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+                        <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+                      </svg>
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{playlist.title}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{playlist.trackCount} {playlist.trackCount === 1 ? 'track' : 'tracks'}</div>
+                  </div>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>›</span>
+                </div>
+              ))}
+            </>
+          )}
+
           {/* Tracks section */}
           {searchResults.length > 0 && (
             <>
-              {(searchArtists.length > 0 || searchAlbums.length > 0) && sectionHeader('Tracks')}
+              {(searchArtists.length > 0 || searchAlbums.length > 0 || searchPlaylists.length > 0) && sectionHeader('Tracks')}
               {tracksToShow.map((r, i) => {
                 const queued = recentlyQueued.has(r.uri)
                 const nexted = recentlyAdded.has(r.uri)
@@ -858,6 +918,68 @@ function SearchSection({
           </div>
         </div>
       )}
+
+      {/* Playlist tracks drill-down */}
+      {drillView.kind === 'playlist-tracks' && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{drillView.playlist.title}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
+            {drillView.tracks.length} {drillView.tracks.length === 1 ? 'track' : 'tracks'}
+          </div>
+          <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)' }}>
+            {drillView.tracks.map((r, i) => {
+              const queued = recentlyQueued.has(r.uri)
+              const nexted = recentlyAdded.has(r.uri)
+              return (
+                <div
+                  key={`${r.uri}-${i}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', background: 'rgba(255,255,255,0.04)',
+                    borderBottom: i < drillView.tracks.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  }}
+                >
+                  {r.artUrl ? (
+                    <img src={r.artUrl} alt="" style={{ width: 34, height: 34, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 34, height: 34, borderRadius: 4, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>{r.title}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {r.artist}{r.album ? ` · ${r.album}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={() => handlePlayNext(r)}
+                      style={{
+                        padding: '6px 10px',
+                        background: nexted ? 'rgba(134,239,172,0.15)' : 'rgba(167,139,250,0.15)',
+                        border: nexted ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(167,139,250,0.3)',
+                        borderRadius: 7, color: nexted ? '#86efac' : '#a78bfa',
+                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                        fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.2s',
+                      }}
+                    >{nexted ? '✓ Next' : '▶︎ Next'}</button>
+                    <button
+                      onClick={() => handleAdd(r)}
+                      style={{
+                        padding: '6px 10px',
+                        background: queued ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.06)',
+                        border: queued ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 7, color: queued ? '#86efac' : 'rgba(255,255,255,0.8)',
+                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                        fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.2s',
+                      }}
+                    >{queued ? '✓ Added' : '+ Queue'}</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -879,6 +1001,7 @@ export default function BroadcastPage() {
   const [searchResults, setSearchResults] = useState<BroadcastTrack[]>([])
   const [searchArtists, setSearchArtists] = useState<BroadcastArtist[]>([])
   const [searchAlbums, setSearchAlbums] = useState<BroadcastAlbum[]>([])
+  const [searchPlaylists, setSearchPlaylists] = useState<BroadcastPlaylist[]>([])
   const [browseResults, setBrowseResults] = useState<{ kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] } | null>(null)
   const [searching, setSearching] = useState(false)
   const [browsing, setBrowsing] = useState(false)
@@ -971,6 +1094,7 @@ export default function BroadcastPage() {
           setSearchResults(payload.results)
           setSearchArtists((payload as any).artists ?? [])
           setSearchAlbums((payload as any).albums ?? [])
+          setSearchPlaylists((payload as any).playlists ?? [])
           setBrowseResults(null)
           setSearching(false)
           if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
@@ -1055,6 +1179,7 @@ export default function BroadcastPage() {
       setSearchResults([])
       setSearchArtists([])
       setSearchAlbums([])
+      setSearchPlaylists([])
       setBrowseResults(null)
       setSearching(false)
       return
@@ -1063,6 +1188,7 @@ export default function BroadcastPage() {
     setSearchResults([])
     setSearchArtists([])
     setSearchAlbums([])
+    setSearchPlaylists([])
     setBrowseResults(null)
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
@@ -1087,6 +1213,16 @@ export default function BroadcastPage() {
     if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
     const cmd: BroadcastCommand = { type: 'browse-album', albumRatingKey: album.ratingKey, requestId, userId: myUserId }
+    channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
+    browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
+  }, [myUserId])
+
+  const handleBrowsePlaylist = useCallback((playlist: BroadcastPlaylist) => {
+    setBrowsing(true)
+    setBrowseResults(null)
+    if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
+    const requestId = Math.random().toString(36).slice(2)
+    const cmd: BroadcastCommand = { type: 'browse-playlist', playlistRatingKey: playlist.ratingKey, requestId, userId: myUserId }
     channelRef.current?.send({ type: 'broadcast', event: 'command', payload: cmd })
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
   }, [myUserId])
@@ -1296,9 +1432,11 @@ export default function BroadcastPage() {
               onSearch={handleSearch}
               onBrowseArtist={handleBrowseArtist}
               onBrowseAlbum={handleBrowseAlbum}
+              onBrowsePlaylist={handleBrowsePlaylist}
               searchResults={searchResults}
               searchArtists={searchArtists}
               searchAlbums={searchAlbums}
+              searchPlaylists={searchPlaylists}
               browseResults={browseResults}
               searching={searching}
               browsing={browsing}
