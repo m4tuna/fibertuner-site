@@ -1084,6 +1084,8 @@ export default function BroadcastPage() {
   // Track whether the channel is in SUBSCRIBED state — send() silently drops
   // messages on non-SUBSCRIBED channels, so we must guard all sends.
   const channelSubscribedRef = useRef(false)
+  // Queue of commands waiting to be sent once the channel is SUBSCRIBED
+  const pendingSendQueue = useRef<BroadcastCommand[]>([])
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deepLinkAttempted = useRef(false)
@@ -1170,6 +1172,11 @@ export default function BroadcastPage() {
           channelRef.current = ch
           channelSubscribedRef.current = true
           ch.track({ userId: myUserId, displayName: myDisplayName, isHost: false, joinedAt: Date.now() }).catch(() => {})
+          // Flush any commands that arrived before the channel was ready
+          const queued = pendingSendQueue.current.splice(0)
+          for (const payload of queued) {
+            ch.send({ type: 'broadcast', event: 'command', payload }).catch(() => {})
+          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           channelSubscribedRef.current = false
         }
@@ -1202,10 +1209,39 @@ export default function BroadcastPage() {
     setJoined(true)
   }
 
-  // Safe send — only sends when channel is confirmed SUBSCRIBED
+  // Close search and reset all search state
+  const closeSearch = useCallback(() => {
+    setShowSearch(false)
+    setSearchResults([])
+    setSearchArtists([])
+    setSearchAlbums([])
+    setSearchPlaylists([])
+    setBrowseResults(null)
+    setSearching(false)
+    setBrowsing(false)
+  }, [])
+
+  // Escape key closes search overlay
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeSearch() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [closeSearch])
+
+  // Safe send — sends immediately when SUBSCRIBED; queues search/browse requests
+  // if the channel isn't ready yet so they're not silently dropped.
   const safeSend = useCallback((payload: BroadcastCommand) => {
-    if (!channelRef.current || !channelSubscribedRef.current) return
-    channelRef.current.send({ type: 'broadcast', event: 'command', payload }).catch(() => {})
+    if (channelRef.current && channelSubscribedRef.current) {
+      channelRef.current.send({ type: 'broadcast', event: 'command', payload }).catch(() => {})
+    } else if (
+      payload.type === 'search-request' ||
+      payload.type === 'browse-artist' ||
+      payload.type === 'browse-album' ||
+      payload.type === 'browse-playlist'
+    ) {
+      // Queue the request — will be flushed once SUBSCRIBED fires
+      pendingSendQueue.current.push(payload)
+    }
   }, [])
 
   const handleVote = useCallback((trackUri: string, vote: 'up' | 'down') => {
@@ -1379,7 +1415,7 @@ export default function BroadcastPage() {
       {/* Search overlay (full-screen, above everything) */}
       {showSearch && (
         <SearchOverlay
-          onClose={() => setShowSearch(false)}
+          onClose={closeSearch}
           onAddTrack={handleAddTrack}
           onPlayNext={handlePlayNext}
           onSearch={handleSearch}
