@@ -329,6 +329,10 @@ function ParticipantsStrip({ participants, hostUserId }: { participants: Broadca
 }
 
 // ── Vote buttons (reusable) ────────────────────────────────────────────────────
+//
+// Upvotes: unlimited counter — tapping always adds +1 (no toggle).
+//          Shows a brief highlight flash (0.5s) to confirm the tap.
+// Downvotes: toggle — one per user. Highlighted when active.
 
 function VoteButtons({
   track, myUserId, onVote, compact = false,
@@ -338,30 +342,44 @@ function VoteButtons({
   onVote: (uri: string, vote: 'up' | 'down') => void
   compact?: boolean
 }) {
-  const myUp = track.votes.up.includes(myUserId)
   const myDown = track.votes.down.includes(myUserId)
-  const net = track.votes.up.length - track.votes.down.length
+  const upCount = typeof track.votes.up === 'number' ? track.votes.up : (track.votes.up as unknown as string[]).length
+  const downCount = track.votes.down.length
+  const net = upCount - downCount
+
+  // Flash state for upvote tap confirmation
+  const [upFlash, setUpFlash] = useState(false)
+  const handleUpvote = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    onVote(track.uri, 'up')
+    setUpFlash(true)
+    setTimeout(() => setUpFlash(false), 500)
+  }
+  const handleDownvote = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    onVote(track.uri, 'down')
+  }
 
   if (compact) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
         <button
-          onClick={e => { e.stopPropagation(); onVote(track.uri, 'up') }}
+          onClick={handleUpvote}
           style={{
-            background: myUp ? `rgba(229,160,13,0.2)` : 'transparent',
+            background: upFlash ? `rgba(229,160,13,0.2)` : 'transparent',
             border: 'none',
             borderRadius: 6, padding: '6px 8px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', minWidth: 36, justifyContent: 'center',
             transition: 'all 0.2s',
           }}
         >
-          <FaThumbsUp style={{ color: myUp ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
+          <FaThumbsUp style={{ color: upFlash ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
         </button>
         <span style={{ fontSize: 12, fontWeight: 600, color: net > 0 ? ACCENT : net < 0 ? '#f87171' : TEXT_MUTED, minWidth: 16, textAlign: 'center' }}>
           {net > 0 ? `+${net}` : net !== 0 ? net : '·'}
         </span>
         <button
-          onClick={e => { e.stopPropagation(); onVote(track.uri, 'down') }}
+          onClick={handleDownvote}
           style={{
             background: myDown ? 'rgba(248,113,113,0.15)' : 'transparent',
             border: 'none',
@@ -370,7 +388,7 @@ function VoteButtons({
             transition: 'all 0.2s',
           }}
         >
-          <FaThumbsDown style={{ color: myDown ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
+          <FaThumbsDown style={{ color: myDown ? '#f87171' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
         </button>
       </div>
     )
@@ -379,20 +397,20 @@ function VoteButtons({
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', marginTop: 20 }}>
       <button
-        onClick={() => onVote(track.uri, 'up')}
+        onClick={() => handleUpvote()}
         style={{
-          background: myUp ? `rgba(229,160,13,0.15)` : SURFACE,
-          border: myUp ? `1px solid rgba(229,160,13,0.4)` : `1px solid ${BORDER}`,
+          background: upFlash ? `rgba(229,160,13,0.15)` : SURFACE,
+          border: upFlash ? `1px solid rgba(229,160,13,0.4)` : `1px solid ${BORDER}`,
           borderRadius: 12, padding: '12px 28px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 8, minHeight: 48,
           transition: 'all 0.2s', fontFamily: FONT,
         }}
       >
-        <FaThumbsUp style={{ color: myUp ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
-        <span style={{ fontSize: 15, fontWeight: 700, color: myUp ? ACCENT : TEXT_SECONDARY }}>{track.votes.up.length}</span>
+        <FaThumbsUp style={{ color: upFlash ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
+        <span style={{ fontSize: 15, fontWeight: 700, color: upFlash ? ACCENT : TEXT_SECONDARY }}>{upCount}</span>
       </button>
       <button
-        onClick={() => onVote(track.uri, 'down')}
+        onClick={() => handleDownvote()}
         style={{
           background: myDown ? 'rgba(248,113,113,0.12)' : SURFACE,
           border: myDown ? '1px solid rgba(248,113,113,0.35)' : `1px solid ${BORDER}`,
@@ -401,8 +419,8 @@ function VoteButtons({
           transition: 'all 0.2s', fontFamily: FONT,
         }}
       >
-        <FaThumbsDown style={{ color: myDown ? '#e5a00d' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
-        <span style={{ fontSize: 15, fontWeight: 700, color: myDown ? '#f87171' : TEXT_SECONDARY }}>{track.votes.down.length}</span>
+        <FaThumbsDown style={{ color: myDown ? '#f87171' : 'rgba(255,255,255,0.5)', fontSize: 20 }} />
+        <span style={{ fontSize: 15, fontWeight: 700, color: myDown ? '#f87171' : TEXT_SECONDARY }}>{downCount}</span>
       </button>
     </div>
   )
@@ -563,13 +581,13 @@ function SearchOverlay({
     if (isDuplicate) {
       setConfirmTrack(track)
     } else {
-      onAddTrack({ ...track, addedBy: myDisplayName, votes: { up: [], down: [] } })
+      onAddTrack({ ...track, addedBy: myDisplayName, votes: { up: 0, down: [] } })
       flashAdded(track.uri, setRecentlyQueued)
     }
   }
 
   const handlePlayNext = (track: BroadcastTrack) => {
-    onPlayNext({ ...track, addedBy: myDisplayName, votes: { up: [], down: [] } })
+    onPlayNext({ ...track, addedBy: myDisplayName, votes: { up: 0, down: [] } })
     flashAdded(track.uri, setRecentlyAdded)
   }
 
@@ -1035,7 +1053,7 @@ function SearchOverlay({
                 border: 'none', borderRadius: 9, color: TEXT_SECONDARY, cursor: 'pointer', fontFamily: FONT, fontSize: 13,
               }}>Cancel</button>
               <button onClick={() => {
-                onAddTrack({ ...confirmTrack, addedBy: myDisplayName, votes: { up: [], down: [] } })
+                onAddTrack({ ...confirmTrack, addedBy: myDisplayName, votes: { up: 0, down: [] } })
                 flashAdded(confirmTrack.uri, setRecentlyQueued)
                 setConfirmTrack(null)
               }} style={{
@@ -1219,21 +1237,20 @@ export default function BroadcastPage() {
       setSession(prev => {
         const incoming = rowToSession(data as Record<string, unknown>)
         if (!prev) return incoming
-        // For each track in the incoming queue, preserve the local user's vote
+        // For each track in the incoming queue, preserve the local user's downvote
         // if they have one — the DB may lag behind by one poll cycle.
+        // Upvotes are a simple counter from the DB (no local assertion needed since
+        // each tap is a one-way increment, not a toggle that can be erased).
         const mergedQueue = incoming.queue.map(incomingTrack => {
           const localTrack = prev.queue.find(t => t.uri === incomingTrack.uri)
           if (!localTrack) return incomingTrack
-          // Determine what the local user voted (from previous local state)
-          const localVotedUp = localTrack.votes.up.includes(myUserId)
+          // Re-assert local downvote on top of the DB's downvoter array
           const localVotedDown = localTrack.votes.down.includes(myUserId)
-          if (!localVotedUp && !localVotedDown) return incomingTrack
-          // Re-assert local vote on top of the DB's vote arrays
-          let up = incomingTrack.votes.up.filter((id: string) => id !== myUserId)
-          let down = incomingTrack.votes.down.filter((id: string) => id !== myUserId)
-          if (localVotedUp) up = [...up, myUserId]
-          if (localVotedDown) down = [...down, myUserId]
-          return { ...incomingTrack, votes: { up, down } }
+          if (!localVotedDown) return incomingTrack
+          const down = incomingTrack.votes.down.includes(myUserId)
+            ? incomingTrack.votes.down
+            : [...incomingTrack.votes.down, myUserId]
+          return { ...incomingTrack, votes: { up: incomingTrack.votes.up, down } }
         })
         return { ...incoming, queue: mergedQueue }
       })
@@ -1296,13 +1313,17 @@ export default function BroadcastPage() {
         ...prev,
         queue: prev.queue.map(t => {
           if (t.uri !== trackUri) return t
-          const wasUp = t.votes.up.includes(myUserId)
-          const wasDown = t.votes.down.includes(myUserId)
-          let up = t.votes.up.filter(id => id !== myUserId)
-          let down = t.votes.down.filter(id => id !== myUserId)
-          if (vote === 'up' && !wasUp) up = [...up, myUserId]
-          if (vote === 'down' && !wasDown) down = [...down, myUserId]
-          return { ...t, votes: { up, down } }
+          if (vote === 'up') {
+            // Unlimited — each tap increments the counter
+            return { ...t, votes: { ...t.votes, up: (typeof t.votes.up === 'number' ? t.votes.up : 0) + 1 } }
+          } else {
+            // Toggle: add if not present, remove if already downvoted
+            const wasDown = t.votes.down.includes(myUserId)
+            const down = wasDown
+              ? t.votes.down.filter(id => id !== myUserId)
+              : [...t.votes.down, myUserId]
+            return { ...t, votes: { ...t.votes, down } }
+          }
         }),
       }
     })
