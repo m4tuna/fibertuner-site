@@ -1406,12 +1406,18 @@ export default function BroadcastPage() {
         // this prevents a poll from resetting an optimistic increment before the
         // DB write has committed.
         const mergedQueue = incoming.queue.map(incomingTrack => {
+          // Use the URI-keyed ref as the source of truth for upvotes. This ref is
+          // written on every upvote tap and is NEVER reset by a poll, so it
+          // survives the case where localTrack is null (track not yet in prev.queue)
+          // or where prev.queue has already been overwritten with a stale DB value.
+          const localUpvoteCount = localUpvotesRef.current.get(incomingTrack.uri)
+          const mergedUp = localUpvoteCount !== undefined
+            ? Math.max(localUpvoteCount, incomingTrack.votes?.up ?? 0)
+            : (incomingTrack.votes?.up ?? 0)
+          // Re-assert local downvote: fall back to prev.queue lookup for this —
+          // downvotes are tracked via the userId array, not a separate ref.
           const localTrack = prev.queue.find(t => t.uri === incomingTrack.uri)
-          if (!localTrack) return incomingTrack
-          // For upvote count — take the higher of local vs DB since votes only go up
-          const mergedUp = Math.max(localTrack?.votes?.up ?? 0, incomingTrack.votes?.up ?? 0)
-          // Re-assert local downvote on top of the DB's downvoter array
-          const localVotedDown = localTrack.votes.down.includes(myUserId)
+          const localVotedDown = localTrack ? localTrack.votes.down.includes(myUserId) : false
           if (!localVotedDown) return { ...incomingTrack, votes: { ...incomingTrack.votes, up: mergedUp } }
           const down = incomingTrack.votes.down.includes(myUserId)
             ? incomingTrack.votes.down
@@ -1420,6 +1426,12 @@ export default function BroadcastPage() {
         })
         return { ...incoming, queue: mergedQueue }
       })
+      // Prune the upvote ref — keep only URIs still present in the incoming queue
+      // so the Map doesn't grow unboundedly across long sessions.
+      const incomingUris = new Set(incoming.queue.map(t => t.uri))
+      for (const uri of localUpvotesRef.current.keys()) {
+        if (!incomingUris.has(uri)) localUpvotesRef.current.delete(uri)
+      }
     }, 5000)
     return () => clearInterval(id)
   }, [code, joined, myUserId])
@@ -1488,7 +1500,18 @@ export default function BroadcastPage() {
             const down = hadDownvote
               ? t.votes.down.filter(id => id !== myUserId)
               : t.votes.down
-            return { ...t, votes: { up: (typeof t.votes.up === 'number' ? t.votes.up : 0) + 1, down } }
+            // Seed the ref from the current state value on the very first tap
+            // so we don't lose votes that arrived from the DB before this tap.
+            const stateUp = typeof t.votes.up === 'number' ? t.votes.up : 0
+            const baseCount = localUpvotesRef.current.has(trackUri)
+              ? localUpvotesRef.current.get(trackUri)!
+              : stateUp
+            const newUp = baseCount + 1
+            // Persist in the ref — this is the source of truth for poll-merge
+            // and is NEVER overwritten by incoming DB data, so the count can
+            // never go backward regardless of whether localTrack is null in prev.
+            localUpvotesRef.current.set(trackUri, newUp)
+            return { ...t, votes: { up: newUp, down } }
           } else {
             // Toggle: add if not present, remove if already downvoted
             const wasDown = t.votes.down.includes(myUserId)
