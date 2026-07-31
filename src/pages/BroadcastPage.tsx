@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { FaThumbsUp, FaThumbsDown, FaShareAlt } from 'react-icons/fa'
+import { FaThumbsUp, FaThumbsDown, FaShareAlt, FaTrash } from 'react-icons/fa'
 import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '../lib/supabase'
 import type {
@@ -430,22 +430,30 @@ function VoteButtons({
 // ── Queue row ─────────────────────────────────────────────────────────────────
 
 function QueueRow({
-  track, isCurrentTrack, myUserId, onVote,
+  track, isCurrentTrack, myUserId, onVote, onRemove,
 }: {
   track: BroadcastTrack
   isCurrentTrack: boolean
   myUserId: string
   onVote: (uri: string, vote: 'up' | 'down') => void
+  onRemove?: (uri: string) => void
 }) {
+  const [hovered, setHovered] = useState(false)
+  const canRemove = onRemove && track.addedBy?.userId === myUserId
+
   return (
-    <div style={{
-      height: 64, display: 'flex', alignItems: 'center', gap: 12,
-      borderBottom: `1px solid ${BORDER}`,
-      paddingLeft: isCurrentTrack ? 8 : 0,
-      borderLeft: isCurrentTrack ? `2px solid ${ACCENT}` : '2px solid transparent',
-      background: isCurrentTrack ? `rgba(229,160,13,0.04)` : 'transparent',
-      transition: 'background 0.2s',
-    }}>
+    <div
+      style={{
+        height: 64, display: 'flex', alignItems: 'center', gap: 12,
+        borderBottom: `1px solid ${BORDER}`,
+        paddingLeft: isCurrentTrack ? 8 : 0,
+        borderLeft: isCurrentTrack ? `2px solid ${ACCENT}` : '2px solid transparent',
+        background: isCurrentTrack ? `rgba(229,160,13,0.04)` : 'transparent',
+        transition: 'background 0.2s',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       {/* Album art thumbnail */}
       {track.artUrl ? (
         <img src={track.artUrl} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
@@ -465,9 +473,26 @@ function QueueRow({
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
           {track.artist}
-          {track.addedBy ? ` · via ${track.addedBy}` : ''}
+          {track.addedBy ? ` · via ${track.addedBy.displayName}` : ''}
         </div>
       </div>
+
+      {/* Remove button — only shown on hover when guest owns this track */}
+      {canRemove && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove(track.uri) }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '6px', display: 'flex', alignItems: 'center',
+            opacity: hovered ? 1 : 0,
+            transition: 'opacity 0.15s',
+            flexShrink: 0,
+          }}
+          aria-label="Remove from queue"
+        >
+          <FaTrash style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }} />
+        </button>
+      )}
 
       {/* Compact vote controls */}
       <VoteButtons track={track} myUserId={myUserId} onVote={onVote} compact />
@@ -582,13 +607,13 @@ function SearchOverlay({
     if (isDuplicate) {
       setConfirmTrack(track)
     } else {
-      onAddTrack({ ...track, addedBy: myDisplayName, votes: { up: 0, down: [] } })
+      onAddTrack({ ...track, addedBy: null, votes: { up: 0, down: [] } })
       flashAdded(track.uri, setRecentlyQueued)
     }
   }
 
   const handlePlayNext = (track: BroadcastTrack) => {
-    onPlayNext({ ...track, addedBy: myDisplayName, votes: { up: 0, down: [] } })
+    onPlayNext({ ...track, addedBy: null, votes: { up: 0, down: [] } })
     flashAdded(track.uri, setRecentlyAdded)
   }
 
@@ -1054,7 +1079,7 @@ function SearchOverlay({
                 border: 'none', borderRadius: 9, color: TEXT_SECONDARY, cursor: 'pointer', fontFamily: FONT, fontSize: 13,
               }}>Cancel</button>
               <button onClick={() => {
-                onAddTrack({ ...confirmTrack, addedBy: myDisplayName, votes: { up: 0, down: [] } })
+                onAddTrack({ ...confirmTrack, addedBy: null, votes: { up: 0, down: [] } })
                 flashAdded(confirmTrack.uri, setRecentlyQueued)
                 setConfirmTrack(null)
               }} style={{
@@ -1361,18 +1386,21 @@ export default function BroadcastPage() {
         if (!prev) return incoming
         // For each track in the incoming queue, preserve the local user's downvote
         // if they have one — the DB may lag behind by one poll cycle.
-        // Upvotes are a simple counter from the DB (no local assertion needed since
-        // each tap is a one-way increment, not a toggle that can be erased).
+        // For upvotes, take the higher of local vs DB since votes only go up —
+        // this prevents a poll from resetting an optimistic increment before the
+        // DB write has committed.
         const mergedQueue = incoming.queue.map(incomingTrack => {
           const localTrack = prev.queue.find(t => t.uri === incomingTrack.uri)
           if (!localTrack) return incomingTrack
+          // For upvote count — take the higher of local vs DB since votes only go up
+          const mergedUp = Math.max(localTrack?.votes?.up ?? 0, incomingTrack.votes?.up ?? 0)
           // Re-assert local downvote on top of the DB's downvoter array
           const localVotedDown = localTrack.votes.down.includes(myUserId)
-          if (!localVotedDown) return incomingTrack
+          if (!localVotedDown) return { ...incomingTrack, votes: { ...incomingTrack.votes, up: mergedUp } }
           const down = incomingTrack.votes.down.includes(myUserId)
             ? incomingTrack.votes.down
             : [...incomingTrack.votes.down, myUserId]
-          return { ...incomingTrack, votes: { up: incomingTrack.votes.up, down } }
+          return { ...incomingTrack, votes: { up: mergedUp, down } }
         })
         return { ...incoming, queue: mergedQueue }
       })
@@ -1459,6 +1487,15 @@ export default function BroadcastPage() {
   const handlePlayNext = useCallback((track: BroadcastTrack) => {
     safeSend({ type: 'play-next', track, addedBy: myDisplayName, userId: myUserId })
   }, [myUserId, myDisplayName, safeSend])
+
+  const handleRemoveTrack = useCallback((trackUri: string) => {
+    // Optimistically hide the row immediately
+    setSession(prev => {
+      if (!prev) return prev
+      return { ...prev, queue: prev.queue.filter(t => t.uri !== trackUri) }
+    })
+    safeSend({ type: 'remove-track', trackUri, userId: myUserId })
+  }, [myUserId, safeSend])
 
   const handleSearch = useCallback((query: string) => {
     if (!query.trim()) {
@@ -1820,6 +1857,7 @@ export default function BroadcastPage() {
                   isCurrentTrack={false}
                   myUserId={myUserId}
                   onVote={handleVote}
+                  onRemove={handleRemoveTrack}
                 />
               ))
             )}
