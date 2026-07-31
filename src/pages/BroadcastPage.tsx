@@ -1021,7 +1021,6 @@ export default function BroadcastPage() {
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deepLinkAttempted = useRef(false)
-  const currentTrackRowRef = useRef<HTMLDivElement | null>(null)
 
   // Fetch initial session row
   useEffect(() => {
@@ -1121,13 +1120,6 @@ export default function BroadcastPage() {
     }, 5000)
     return () => clearInterval(id)
   }, [code, joined])
-
-  // Auto-scroll queue to current track on initial load or track change
-  useEffect(() => {
-    if (!joined || !session?.currentIndex) return
-    const el = currentTrackRowRef.current
-    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-  }, [joined, session?.currentIndex])
 
   const handleJoin = (name: string) => {
     try {
@@ -1412,7 +1404,6 @@ export default function BroadcastPage() {
                   isCurrentTrack={i === session.currentIndex}
                   myUserId={myUserId}
                   onVote={handleVote}
-                  rowRef={i === session.currentIndex ? currentTrackRowRef : undefined}
                 />
               ))
             )}
