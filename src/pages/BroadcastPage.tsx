@@ -1071,20 +1071,16 @@ export default function BroadcastPage() {
     }
   }, [session?.currentTrack?.title])
 
-  // Single channel: postgres_changes + presence + broadcast (search results)
-  // All subscriptions on one channel so nothing stomps on each other.
+  // Presence + broadcast (search-results, browse-results) on a dedicated channel.
+  // postgres_changes is intentionally omitted: a server-side filter mismatch would
+  // trigger CHANNEL_ERROR which calls unsubscribe() and tears down the broadcast
+  // listener, causing search to get permanently stuck on "searching".
+  // Session state updates come from the polling fallback below instead.
   useEffect(() => {
     if (!code || !joined) return
 
     const ch = supabase
       .channel(`broadcast:${code}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'broadcast_sessions', filter: `code=eq.${code}` },
-        (payload) => {
-          if (payload.new) setSession(rowToSession(payload.new as Record<string, unknown>))
-        }
-      )
       .on('presence', { event: 'sync' }, () => {
         const state = ch.presenceState() as Record<string, Array<{ userId: string; displayName: string; isHost: boolean; joinedAt: number }>>
         setParticipants(Object.values(state).flat())
@@ -1105,9 +1101,9 @@ export default function BroadcastPage() {
           if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
         }
       })
-      .subscribe(async (status) => {
+      .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          await ch.track({ userId: myUserId, displayName: myDisplayName, isHost: false, joinedAt: Date.now() })
+          ch.track({ userId: myUserId, displayName: myDisplayName, isHost: false, joinedAt: Date.now() }).catch(() => {})
         }
       })
 
