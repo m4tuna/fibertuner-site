@@ -67,6 +67,10 @@ function rowToSession(row: Record<string, unknown>): BroadcastSession {
   }
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const APP_STORE_URL = 'https://apps.apple.com/app/fibertuner/id6743571749'
+
 // ── Shared styles ─────────────────────────────────────────────────────────────
 
 const ACCENT = '#e5a00d'
@@ -1321,6 +1325,9 @@ export default function BroadcastPage() {
   const [browseResults, setBrowseResults] = useState<{ kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] } | null>(null)
   const [searching, setSearching] = useState(false)
   const [browsing, setBrowsing] = useState(false)
+  const [bannerDismissed, setBannerDismissed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('ftAppBannerDismissed') === '1' } catch { return false }
+  })
 
   const [myUserId] = useState<string>(() => {
     try {
@@ -1347,7 +1354,6 @@ export default function BroadcastPage() {
   const searchRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSearchQueryRef = useRef<string>('')
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const deepLinkAttempted = useRef(false)
 
   // Fetch initial session row
   useEffect(() => {
@@ -1373,10 +1379,6 @@ export default function BroadcastPage() {
         setLoading(false)
 
         if (!isSessionEnded(s)) {
-          if (!deepLinkAttempted.current) {
-            deepLinkAttempted.current = true
-            window.location.href = `fibertuner://broadcast/${code}`
-          }
           const savedName = getSavedName()
           if (savedName) {
             setJoined(true)
@@ -1678,6 +1680,11 @@ export default function BroadcastPage() {
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
   }, [myUserId, safeSend])
 
+  const dismissBanner = () => {
+    setBannerDismissed(true)
+    try { sessionStorage.setItem('ftAppBannerDismissed', '1') } catch {}
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const pageStyle: React.CSSProperties = {
@@ -1807,6 +1814,92 @@ export default function BroadcastPage() {
           myDisplayName={myDisplayName}
           queue={session.queue}
         />
+      )}
+
+      {/* App promo banner — fixed bottom, dismissible per session */}
+      {!bannerDismissed && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300,
+          background: 'rgba(20,20,20,0.97)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          padding: 'max(14px, env(safe-area-inset-bottom, 14px)) 16px 14px',
+          fontFamily: FONT,
+        }}>
+          <div style={{ maxWidth: 480, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Icon + text */}
+            <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>🎵</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: TEXT_PRIMARY, lineHeight: 1.3 }}>
+                Get the Fibertuner app
+              </div>
+              <div style={{ fontSize: 11, color: TEXT_SECONDARY, marginTop: 1 }}>
+                Control Sonos & vote from your phone
+              </div>
+            </div>
+            {/* Open App button */}
+            <button
+              onClick={() => { window.location.href = `fibertuner://broadcast/${code}` }}
+              style={{
+                flexShrink: 0,
+                padding: '8px 12px',
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 8,
+                color: TEXT_PRIMARY,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: FONT,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Open App
+            </button>
+            {/* Download button */}
+            <a
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flexShrink: 0,
+                padding: '8px 14px',
+                background: ACCENT,
+                border: 'none',
+                borderRadius: 8,
+                color: '#111',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: FONT,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                display: 'inline-block',
+              }}
+            >
+              Download
+            </a>
+            {/* Dismiss */}
+            <button
+              onClick={dismissBanner}
+              aria-label="Dismiss"
+              style={{
+                flexShrink: 0,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: TEXT_MUTED,
+                fontSize: 18,
+                lineHeight: 1,
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >✕</button>
+          </div>
+        </div>
       )}
 
       {/* Main page */}
@@ -1966,7 +2059,7 @@ export default function BroadcastPage() {
           </div>
 
           {/* ── Queue ─────────────────────────────────────────────────────── */}
-          <div style={{ flex: 1, padding: '16px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom, 0px))' }}>
+          <div style={{ flex: 1, padding: '16px 20px', paddingBottom: bannerDismissed ? 'max(32px, env(safe-area-inset-bottom, 0px))' : 'max(100px, calc(env(safe-area-inset-bottom, 0px) + 80px))' }}>
             <div style={{
               fontSize: 10, fontWeight: 700, color: TEXT_MUTED,
               letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
