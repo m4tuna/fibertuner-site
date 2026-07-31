@@ -7,7 +7,7 @@ export interface BroadcastTrack {
   uri:        string
   ratingKey?: string
   addedBy:    string        // display name, '' = host
-  votes: { up: string[]; down: string[] }
+  votes: { up: number; down: string[] }  // up = unlimited counter; down = userId array (deduplicated)
 }
 
 export type BroadcastPlayState = 'playing' | 'paused' | 'stopped'

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa'
+import { FaThumbsUp, FaThumbsDown, FaShareAlt } from 'react-icons/fa'
+import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '../lib/supabase'
 import type {
   BroadcastSession,
@@ -1068,6 +1069,126 @@ function SearchOverlay({
   )
 }
 
+// ── Share modal ───────────────────────────────────────────────────────────────
+
+function ShareModal({ code, onClose }: { code: string; onClose: () => void }) {
+  const joinUrl = `https://fibertuner.com/broadcast/${code}`
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(joinUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {
+      // Fallback for older browsers / no permission
+      try {
+        const ta = document.createElement('textarea')
+        ta.value = joinUrl
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch {}
+    })
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#1a1a1a',
+          borderRadius: 20,
+          padding: 32,
+          maxWidth: 320,
+          width: '100%',
+          position: 'relative',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+          boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
+        }}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 14, right: 14,
+            background: 'rgba(255,255,255,0.08)',
+            border: 'none', borderRadius: '50%',
+            width: 32, height: 32,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'rgba(255,255,255,0.5)',
+            fontSize: 18, lineHeight: 1, fontFamily: FONT,
+            transition: 'background 0.15s',
+          }}
+          aria-label="Close"
+        >✕</button>
+
+        {/* Title */}
+        <div style={{
+          fontSize: 16, fontWeight: 700, color: TEXT_PRIMARY,
+          fontFamily: FONT, alignSelf: 'flex-start',
+        }}>
+          Join the broadcast
+        </div>
+
+        {/* QR code */}
+        <div style={{
+          background: '#ffffff',
+          padding: 12, borderRadius: 12,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <QRCodeSVG value={joinUrl} size={180} />
+        </div>
+
+        {/* Code display */}
+        <div style={{
+          fontFamily: 'monospace',
+          fontSize: 28,
+          letterSpacing: 4,
+          color: TEXT_PRIMARY,
+          userSelect: 'text',
+          WebkitUserSelect: 'text',
+        }}>
+          {code}
+        </div>
+
+        {/* Copy link button */}
+        <button
+          onClick={handleCopy}
+          style={{
+            width: '100%',
+            padding: '13px 0',
+            background: copied ? 'rgba(134,239,172,0.15)' : ACCENT,
+            color: copied ? '#86efac' : '#000',
+            border: copied ? '1px solid rgba(134,239,172,0.4)' : 'none',
+            borderRadius: 40,
+            fontSize: 14, fontWeight: 700,
+            cursor: 'pointer', fontFamily: FONT,
+            transition: 'all 0.2s',
+          }}
+        >
+          {copied ? 'Copied!' : 'Copy link'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Main BroadcastPage ────────────────────────────────────────────────────────
 
 export default function BroadcastPage() {
@@ -1090,6 +1211,7 @@ export default function BroadcastPage() {
   const [joined, setJoined] = useState(false)
   const [showNameModal, setShowNameModal] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const [artUrl, setArtUrl] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<BroadcastTrack[]>([])
   const [searchArtists, setSearchArtists] = useState<BroadcastArtist[]>([])
@@ -1490,6 +1612,11 @@ export default function BroadcastPage() {
         html, body { background: ${BG}; overflow-x: hidden; max-width: 100%; }
       `}</style>
 
+      {/* Share modal */}
+      {showShareModal && (
+        <ShareModal code={code} onClose={() => setShowShareModal(false)} />
+      )}
+
       {/* Search overlay (full-screen, above everything) */}
       {showSearch && (
         <SearchOverlay
@@ -1545,11 +1672,32 @@ export default function BroadcastPage() {
                 }}>LIVE</span>
               )}
             </div>
-            <span style={{
-              fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.15em',
-              color: TEXT_MUTED, background: SURFACE,
-              padding: '3px 8px', borderRadius: 6, flexShrink: 0,
-            }}>{code}</span>
+            <button
+              onClick={() => setShowShareModal(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.15em',
+                color: TEXT_MUTED, background: SURFACE,
+                padding: '3px 8px 3px 7px', borderRadius: 6, flexShrink: 0,
+                border: `1px solid transparent`,
+                cursor: 'pointer',
+                transition: 'border-color 0.15s, opacity 0.15s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)'
+                ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.8'
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'
+                ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
+              }}
+              onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.5' }}
+              onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
+              aria-label="Share broadcast"
+            >
+              <FaShareAlt style={{ fontSize: 9, opacity: 0.7 }} />
+              {code}
+            </button>
           </header>
 
           {/* ── Album art ──────────────────────────────────────────────────── */}
