@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa'
 import { supabase } from '../lib/supabase'
-import { fetchAlbumArt } from '../lib/albumArt'
 import type {
   BroadcastSession,
   BroadcastTrack,
@@ -1143,14 +1142,11 @@ export default function BroadcastPage() {
       })
   }, [code])
 
-  // Fetch album art
+  // Sync album art from the session's current track (Plex thumb URL, already authenticated)
   useEffect(() => {
-    if (!session?.currentTrack) return
-    const { artist, album } = session.currentTrack
-    if (artist || album) {
-      fetchAlbumArt(artist, album).then(url => { if (url) setArtUrl(url) })
-    }
-  }, [session?.currentTrack?.title])
+    const url = session?.currentTrack?.artUrl ?? null
+    setArtUrl(url || null)
+  }, [session?.currentTrack?.title, session?.currentTrack?.artUrl])
 
   // Presence + broadcast channel — only set channelRef.current AFTER SUBSCRIBED.
   // This prevents send() calls from being silently dropped on a not-yet-ready channel.
