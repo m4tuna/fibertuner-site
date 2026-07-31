@@ -50,12 +50,20 @@ export interface BroadcastAlbum {
   artUrl:       string
 }
 
+export interface BroadcastPlaylist {
+  ratingKey:   string
+  title:       string
+  trackCount:  number
+  artUrl:      string
+}
+
 export type BroadcastCommand =
-  | { type: 'add-track';       track: BroadcastTrack; addedBy: string; userId: string }
-  | { type: 'play-next';       track: BroadcastTrack; addedBy: string; userId: string }
-  | { type: 'vote';            trackUri: string; vote: 'up' | 'down'; userId: string; displayName: string }
-  | { type: 'search-request';  query: string; requestId: string; userId: string }
-  | { type: 'search-results';  requestId: string; results: BroadcastTrack[]; artists: BroadcastArtist[]; albums: BroadcastAlbum[] }
-  | { type: 'browse-artist';   artistRatingKey: string; requestId: string; userId: string }
-  | { type: 'browse-album';    albumRatingKey: string; requestId: string; userId: string }
-  | { type: 'browse-results';  requestId: string; kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] }
+  | { type: 'add-track';        track: BroadcastTrack; addedBy: string; userId: string }
+  | { type: 'play-next';        track: BroadcastTrack; addedBy: string; userId: string }
+  | { type: 'vote';             trackUri: string; vote: 'up' | 'down'; userId: string; displayName: string }
+  | { type: 'search-request';   query: string; requestId: string; userId: string }
+  | { type: 'search-results';   requestId: string; results: BroadcastTrack[]; artists: BroadcastArtist[]; albums: BroadcastAlbum[]; playlists: BroadcastPlaylist[] }
+  | { type: 'browse-artist';    artistRatingKey: string; requestId: string; userId: string }
+  | { type: 'browse-album';     albumRatingKey: string; requestId: string; userId: string }
+  | { type: 'browse-playlist';  playlistRatingKey: string; requestId: string; userId: string }
+  | { type: 'browse-results';   requestId: string; kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] }
