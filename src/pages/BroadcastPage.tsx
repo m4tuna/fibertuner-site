@@ -1457,6 +1457,7 @@ export default function BroadcastPage() {
   }, [])
 
   const handleVote = useCallback((trackUri: string, vote: 'up' | 'down') => {
+    let cancelDownvote = false
     setSession(prev => {
       if (!prev) return prev
       return {
@@ -1464,8 +1465,14 @@ export default function BroadcastPage() {
         queue: prev.queue.map(t => {
           if (t.uri !== trackUri) return t
           if (vote === 'up') {
-            // Unlimited — each tap increments the counter
-            return { ...t, votes: { ...t.votes, up: (typeof t.votes.up === 'number' ? t.votes.up : 0) + 1 } }
+            // Unlimited — each tap increments the counter.
+            // If the user had an active downvote, cancel it optimistically.
+            const hadDownvote = t.votes.down.includes(myUserId)
+            if (hadDownvote) cancelDownvote = true
+            const down = hadDownvote
+              ? t.votes.down.filter(id => id !== myUserId)
+              : t.votes.down
+            return { ...t, votes: { up: (typeof t.votes.up === 'number' ? t.votes.up : 0) + 1, down } }
           } else {
             // Toggle: add if not present, remove if already downvoted
             const wasDown = t.votes.down.includes(myUserId)
@@ -1477,7 +1484,7 @@ export default function BroadcastPage() {
         }),
       }
     })
-    safeSend({ type: 'vote', trackUri, vote, userId: myUserId, displayName: myDisplayName })
+    safeSend({ type: 'vote', trackUri, vote, userId: myUserId, displayName: myDisplayName, ...(vote === 'up' && cancelDownvote ? { cancelDownvote: true } : {}) })
   }, [myUserId, myDisplayName, safeSend])
 
   const handleAddTrack = useCallback((track: BroadcastTrack) => {

@@ -61,7 +61,7 @@ export type BroadcastCommand =
   | { type: 'add-track';        track: BroadcastTrack; addedBy: string; userId: string }
   | { type: 'play-next';        track: BroadcastTrack; addedBy: string; userId: string }
   | { type: 'remove-track';     trackUri: string; userId: string }
-  | { type: 'vote';             trackUri: string; vote: 'up' | 'down'; userId: string; displayName: string }
+  | { type: 'vote';             trackUri: string; vote: 'up' | 'down'; userId: string; displayName: string; cancelDownvote?: boolean }
   | { type: 'search-request';   query: string; requestId: string; userId: string }
   | { type: 'search-results';   requestId: string; results: BroadcastTrack[]; artists: BroadcastArtist[]; albums: BroadcastAlbum[]; playlists: BroadcastPlaylist[] }
   | { type: 'browse-artist';    artistRatingKey: string; requestId: string; userId: string }
