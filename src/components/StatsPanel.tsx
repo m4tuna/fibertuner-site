@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
 import { useDownloadStats, fmt, type DownloadStats } from '../hooks/useDownloadStats'
 import '../styles/stats-panel.css'
 
@@ -216,14 +215,14 @@ export default function StatsPanel() {
   const [profileError, setProfileError] = useState(false)
 
   useEffect(() => {
-    supabase
-      .from('profiles')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) { setProfileError(true); return }
-        setProfiles(data as ProfileRow[])
+    // Fetch via Netlify function so service-role key bypasses RLS
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.error) { setProfileError(true); return }
+        setProfiles((data?.profiles ?? []) as ProfileRow[])
       })
+      .catch(() => setProfileError(true))
   }, [])
 
   return (
