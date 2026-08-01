@@ -71,9 +71,25 @@ function rowToSession(row: Record<string, unknown>): BroadcastSession {
 
 const APP_STORE_URL = 'https://apps.apple.com/app/fibertuner/id6743571749'
 
+// ── Accent color helpers ───────────────────────────────────────────────────────
+
+const ACCENT_FALLBACK = '#e5a00d'
+const ACCENT = ACCENT_FALLBACK
+
+/** Returns '#111' for light accents, '#fff' for dark ones. */
+function accentFg(hex: string): string {
+  try {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#111' : '#fff'
+  } catch {
+    return '#111'
+  }
+}
+
 // ── Shared styles ─────────────────────────────────────────────────────────────
 
-const ACCENT = '#e5a00d'
 const BG = '#0d0d0d'
 const SURFACE = 'rgba(255,255,255,0.05)'
 const BORDER = 'rgba(255,255,255,0.08)'
@@ -1427,6 +1443,9 @@ export default function BroadcastPage() {
           setBrowsing(false)
           if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
         }
+        if (payload.type === 'broadcast-ended') {
+          setSession(prev => prev ? { ...prev, state: 'stopped', expiresAt: new Date(0).toISOString() } : prev)
+        }
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
@@ -1820,84 +1839,56 @@ export default function BroadcastPage() {
       {!bannerDismissed && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300,
-          background: 'rgba(20,20,20,0.97)',
+          background: 'rgba(18,18,18,0.97)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          padding: 'max(14px, env(safe-area-inset-bottom, 14px)) 16px 14px',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          padding: 'max(10px, env(safe-area-inset-bottom, 10px)) 20px 10px',
           fontFamily: FONT,
         }}>
-          <div style={{ maxWidth: 480, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Icon + text */}
-            <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>🎵</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: TEXT_PRIMARY, lineHeight: 1.3 }}>
-                Get the Fibertuner app
-              </div>
-              <div style={{ fontSize: 11, color: TEXT_SECONDARY, marginTop: 1 }}>
-                Control Sonos & vote from your phone
-              </div>
+          <div style={{ maxWidth: 520, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 14 }}>
+            {/* Wordmark + tagline */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 8, overflow: 'hidden' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: ACCENT, flexShrink: 0 }}>Fibertuner</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                · Control Sonos from your phone
+              </span>
             </div>
-            {/* Open App button */}
+            {/* Open App — outlined */}
             <button
               onClick={() => { window.location.href = `fibertuner://broadcast/${code}` }}
               style={{
-                flexShrink: 0,
-                padding: '8px 12px',
+                flexShrink: 0, padding: '6px 12px',
                 background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: 8,
-                color: TEXT_PRIMARY,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: FONT,
-                whiteSpace: 'nowrap',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: 7, color: 'rgba(255,255,255,0.75)',
+                fontSize: 12, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap',
               }}
-            >
-              Open App
-            </button>
-            {/* Download button */}
+            >Open App</button>
+            {/* Download — solid accent */}
             <a
               href={APP_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                flexShrink: 0,
-                padding: '8px 14px',
-                background: ACCENT,
-                border: 'none',
-                borderRadius: 8,
-                color: '#111',
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
+                flexShrink: 0, padding: '6px 13px',
+                background: ACCENT, borderRadius: 7,
+                color: accentFg(ACCENT),
+                fontSize: 12, fontWeight: 600,
+                textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block',
                 fontFamily: FONT,
-                textDecoration: 'none',
-                whiteSpace: 'nowrap',
-                display: 'inline-block',
               }}
-            >
-              Download
-            </a>
+            >Download</a>
             {/* Dismiss */}
             <button
               onClick={dismissBanner}
               aria-label="Dismiss"
               style={{
-                flexShrink: 0,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: TEXT_MUTED,
-                fontSize: 18,
-                lineHeight: 1,
-                padding: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                flexShrink: 0, background: 'none', border: 'none',
+                cursor: 'pointer', color: 'rgba(255,255,255,0.25)',
+                fontSize: 18, lineHeight: 1, padding: '0 0 0 2px',
               }}
-            >✕</button>
+            >×</button>
           </div>
         </div>
       )}

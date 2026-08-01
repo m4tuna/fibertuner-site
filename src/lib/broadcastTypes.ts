@@ -68,3 +68,5 @@ export type BroadcastCommand =
   | { type: 'browse-album';     albumRatingKey: string; requestId: string; userId: string }
   | { type: 'browse-playlist';  playlistRatingKey: string; requestId: string; userId: string }
   | { type: 'browse-results';   requestId: string; kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] }
+  | { type: 'host-meta';        accentColor: string }
+  | { type: 'broadcast-ended' }
