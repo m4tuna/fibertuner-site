@@ -212,17 +212,29 @@ function UserStats({ profiles }: { profiles: ProfileRow[] }) {
 export default function StatsPanel() {
   const stats = useDownloadStats(GITHUB)
   const [profiles, setProfiles]       = useState<ProfileRow[] | null>(null)
-  const [profileError, setProfileError] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Fetch via Netlify function so service-role key bypasses RLS
+    // Fetch via Netlify function (/api/stats) so service-role key bypasses RLS.
+    // In local dev: run `npm run netlify:dev` in a separate terminal so this endpoint resolves.
+    // Vite proxies /api/* → http://localhost:8888 (netlify dev port).
     fetch('/api/stats')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`/api/stats returned ${r.status}`)
+        return r.json()
+      })
       .then(data => {
-        if (data?.error) { setProfileError(true); return }
+        if (data?.error) { setProfileError(`API error: ${data.error}`); return }
         setProfiles((data?.profiles ?? []) as ProfileRow[])
       })
-      .catch(() => setProfileError(true))
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        setProfileError(
+          msg.includes('404') || msg.includes('Failed to fetch')
+            ? '/api/stats not available — run `npm run netlify:dev` in a separate terminal for local dev'
+            : msg
+        )
+      })
   }, [])
 
   return (
@@ -242,7 +254,7 @@ export default function StatsPanel() {
         {profileError && (
           <div className="stats-card">
             <span style={{ fontSize: 12, color: 'rgba(255,100,100,0.7)' }}>
-              Failed to load profiles — RLS may be blocking anon reads.
+              {profileError}
             </span>
           </div>
         )}
