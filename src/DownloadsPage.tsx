@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import Footer from './components/Footer'
-import { supabase } from './lib/supabase'
 import './styles/downloads.css'
 
 const GITHUB = 'm4tuna/fibertuner-site'
@@ -65,17 +64,14 @@ export default function DownloadsPage() {
 
   useEffect(() => {
     if (!serverParam) return
-    supabase
-      .from('profiles')
-      .select('plex_username, server_name')
-      .eq('server_machine_id', serverParam)
-      .eq('server_owned', true)
-      .limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setInviteInfo({ username: data[0].plex_username, serverName: data[0].server_name })
+    fetch(`/api/server-invite?server=${encodeURIComponent(serverParam)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data?.found && data.username) {
+          setInviteInfo({ username: data.username, serverName: data.serverName ?? '' })
         }
       })
+      .catch(() => {/* silently ignore — banner stays hidden */})
   }, [serverParam])
 
   return (
