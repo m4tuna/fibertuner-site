@@ -1,44 +1,46 @@
 import { useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
 import Footer from '../components/Footer'
 import StatsPanel from '../components/StatsPanel'
-import { supabase } from '../lib/supabase'
 import '../styles/stats-panel.css'
 import '../styles/downloads.css'
 
 const GITHUB = 'm4tuna/fibertuner-site'
+const SESSION_KEY = 'stats_auth'
+const REQUIRED_PASSWORD = import.meta.env.VITE_STATS_PASSWORD as string | undefined
 
 export default function StatsPage() {
-  const [session, setSession] = useState<Session | null | undefined>(undefined)
-  const [email, setEmail]     = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError]     = useState('')
-  const [loading, setLoading] = useState(false)
+  // undefined = still checking sessionStorage; true/false = resolved
+  const [authed, setAuthed] = useState<boolean | undefined>(undefined)
+  const [input, setInput]   = useState('')
+  const [error, setError]   = useState('')
 
-  // Resolve session on mount; undefined = still loading
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s)
-    })
-    return () => subscription.unsubscribe()
+    // If no password is configured (dev), skip auth entirely
+    if (!REQUIRED_PASSWORD) {
+      setAuthed(true)
+      return
+    }
+    // Check session storage for existing auth
+    if (sessionStorage.getItem(SESSION_KEY) === '1') {
+      setAuthed(true)
+    } else {
+      setAuthed(false)
+    }
   }, [])
 
-  async function handleSignIn(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
-    setError('')
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password })
-    if (err) setError(err.message)
-    setLoading(false)
+    if (input === REQUIRED_PASSWORD) {
+      sessionStorage.setItem(SESSION_KEY, '1')
+      setAuthed(true)
+    } else {
+      setError('Incorrect passphrase.')
+      setInput('')
+    }
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-  }
-
-  // Still resolving session
-  if (session === undefined) {
+  // Still resolving
+  if (authed === undefined) {
     return (
       <div className="downloads">
         <header className="site-header">
@@ -51,8 +53,8 @@ export default function StatsPage() {
     )
   }
 
-  // Not signed in — show sign-in form
-  if (!session) {
+  // Not authed — show passphrase form
+  if (!authed) {
     return (
       <div className="downloads">
         <header className="site-header">
@@ -62,33 +64,24 @@ export default function StatsPage() {
         <div className="stats-signin">
           <div className="stats-signin__card">
             <div className="stats-signin__title">Stats</div>
-            <div className="stats-signin__sub">Sign in to view download and user stats.</div>
-            <form className="stats-signin__form" onSubmit={handleSignIn}>
-              <input
-                className="stats-signin__input"
-                type="email"
-                placeholder="Email"
-                autoComplete="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
+            <div className="stats-signin__sub">Enter the passphrase to view stats.</div>
+            <form className="stats-signin__form" onSubmit={handleSubmit}>
               <input
                 className="stats-signin__input"
                 type="password"
-                placeholder="Password"
+                placeholder="Passphrase"
                 autoComplete="current-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
+                value={input}
+                onChange={e => setInput(e.target.value)}
                 required
+                autoFocus
               />
               {error && <div className="stats-signin__error">{error}</div>}
               <button
                 className="stats-signin__btn"
                 type="submit"
-                disabled={loading}
               >
-                {loading ? 'Signing in…' : 'Sign in'}
+                View Stats
               </button>
             </form>
           </div>
@@ -98,15 +91,12 @@ export default function StatsPage() {
     )
   }
 
-  // Signed in — show stats panel with sign-out
+  // Authed — show stats panel
   return (
     <div className="downloads">
       <header className="site-header">
         <a href="/" className="site-header__logo">Fibertuner</a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{session.user.email}</span>
-          <button className="stats-signout-btn" onClick={handleSignOut}>Sign out</button>
-        </div>
+        <a href="/downloads" className="site-header__link">Downloads</a>
       </header>
       <div className="downloads__stats-body">
         <StatsPanel />
