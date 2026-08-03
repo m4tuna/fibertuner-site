@@ -65,13 +65,20 @@ export default function DownloadsPage() {
   useEffect(() => {
     if (!serverParam) return
     fetch(`/api/server-invite?server=${encodeURIComponent(serverParam)}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) console.warn('[invite] server-invite API error:', r.status)
+        return r.json()
+      })
       .then(data => {
-        if (data?.found && data.username) {
+        if (data?.error) {
+          console.warn('[invite] server-invite returned error:', data.error)
+          return
+        }
+        if (data?.found && data.username != null) {
           setInviteInfo({ username: data.username, serverName: data.serverName ?? '' })
         }
       })
-      .catch(() => {/* silently ignore — banner stays hidden */})
+      .catch(err => console.warn('[invite] server-invite fetch failed:', err))
   }, [serverParam])
 
   return (
