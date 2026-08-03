@@ -7,6 +7,7 @@ import PrivacyPage from './PrivacyPage'
 import SharePage from './pages/SharePage'
 import BroadcastPage from './pages/BroadcastPage'
 import StatsPage from './pages/StatsPage'
+import DemoPage from './pages/DemoPage'
 
 const path   = window.location.pathname.replace(/\/$/, '') || '/'
 const search = new URLSearchParams(window.location.search)
@@ -16,6 +17,7 @@ const root =
   path === '/privacy'                ? <PrivacyPage /> :
   path === '/share'                  ? <SharePage /> :
   path === '/stats'                  ? <StatsPage /> :
+  path === '/demo'                   ? <DemoPage /> :
   path.startsWith('/broadcast')      ? <BroadcastPage /> :
   <App />
 
