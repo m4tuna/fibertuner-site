@@ -8,8 +8,10 @@ import SharePage from './pages/SharePage'
 import BroadcastPage from './pages/BroadcastPage'
 import StatsPage from './pages/StatsPage'
 
-const path = window.location.pathname.replace(/\/$/, '') || '/'
+const path   = window.location.pathname.replace(/\/$/, '') || '/'
+const search = new URLSearchParams(window.location.search)
 const root =
+  path === '/downloads' && search.has('stats') ? <StatsPage /> :
   path === '/downloads'              ? <DownloadsPage /> :
   path === '/privacy'                ? <PrivacyPage /> :
   path === '/share'                  ? <SharePage /> :
