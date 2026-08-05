@@ -177,8 +177,46 @@
   color: rgba(255,255,255,0.85);
 }
 
+/* ── Diff-range banner ───────────────────────────────────── */
+.cl-diff-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  margin-bottom: 28px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #ef6c00 10%, transparent);
+  border: 1px solid color-mix(in srgb, #ef6c00 28%, transparent);
+}
+
+.cl-diff-banner__text {
+  font-size: 13px;
+  color: color-mix(in srgb, #ef6c00 90%, white);
+  font-weight: 500;
+}
+
+.cl-diff-banner__dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  padding: 2px 8px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cl-diff-banner__dismiss:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.75);
+}
+
 @media (max-width: 600px) {
   .changelog-inner { padding: 48px 20px 72px; }
   .cl-card__header { flex-direction: column; gap: 4px; }
   .site-header__nav { gap: 16px; }
+  .cl-diff-banner { flex-direction: column; align-items: flex-start; gap: 8px; }
 }

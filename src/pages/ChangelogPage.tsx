@@ -10,6 +10,17 @@ interface ChangelogEntry {
   notes: string
 }
 
+/** Compare semver strings. Returns negative if a < b, 0 if equal, positive if a > b. */
+function compareSemver(a: string, b: string): number {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0)
+    if (diff !== 0) return diff
+  }
+  return 0
+}
+
 function parseChangelog(md: string): ChangelogEntry[] {
   const entries: ChangelogEntry[] = []
   // Match ## [VERSION] - DATE headers
@@ -105,9 +116,14 @@ function renderNotes(notes: string) {
 }
 
 export default function ChangelogPage() {
-  const [entries, setEntries]   = useState<ChangelogEntry[] | null>(null)
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(false)
+  const [allEntries, setAllEntries] = useState<ChangelogEntry[] | null>(null)
+  const [loading, setLoading]       = useState(true)
+  const [error, setError]           = useState(false)
+
+  // Read ?from= and ?to= from the URL
+  const params = new URLSearchParams(window.location.search)
+  const fromVersion = params.get('from') ?? ''
+  const toVersion   = params.get('to') ?? ''
 
   useEffect(() => {
     fetch('/CHANGELOG.md')
@@ -116,7 +132,7 @@ export default function ChangelogPage() {
         return r.text()
       })
       .then(md => {
-        setEntries(parseChangelog(md))
+        setAllEntries(parseChangelog(md))
         setLoading(false)
       })
       .catch(() => {
@@ -124,6 +140,25 @@ export default function ChangelogPage() {
         setLoading(false)
       })
   }, [])
+
+  // Apply version range filter when params are present
+  const entries = allEntries
+    ? (fromVersion || toVersion)
+      ? allEntries.filter(e => {
+          const geFrom = !fromVersion || compareSemver(e.version, fromVersion) > 0
+          const leTo   = !toVersion   || compareSemver(e.version, toVersion)   <= 0
+          return geFrom && leTo
+        })
+      : allEntries
+    : null
+
+  const isDiffView = Boolean(fromVersion || toVersion)
+
+  function clearFilter() {
+    window.history.replaceState(null, '', window.location.pathname)
+    // Force a re-render by navigating to the base URL (simplest approach in a static SPA)
+    window.location.href = window.location.pathname
+  }
 
   return (
     <div className="changelog-page">
@@ -144,6 +179,25 @@ export default function ChangelogPage() {
             Every notable change to Fibertuner, most recent first.
           </p>
 
+          {/* Diff-range banner */}
+          {isDiffView && !loading && !error && (
+            <div className="cl-diff-banner">
+              <span className="cl-diff-banner__text">
+                {toVersion
+                  ? <>Showing changes from v{fromVersion} to v{toVersion}</>
+                  : <>Showing changes since v{fromVersion}</>
+                }
+              </span>
+              <button
+                className="cl-diff-banner__dismiss"
+                onClick={clearFilter}
+                aria-label="View all versions"
+              >
+                × View all
+              </button>
+            </div>
+          )}
+
           {loading && (
             <div className="changelog-loading">Loading…</div>
           )}
@@ -162,8 +216,10 @@ export default function ChangelogPage() {
             </div>
           )}
 
-          {entries !== null && entries.length === 0 && (
-            <div className="changelog-loading">No releases yet.</div>
+          {entries !== null && entries.length === 0 && !loading && (
+            <div className="changelog-loading">
+              {isDiffView ? 'No releases found in this range.' : 'No releases yet.'}
+            </div>
           )}
 
           {entries && entries.length > 0 && (
