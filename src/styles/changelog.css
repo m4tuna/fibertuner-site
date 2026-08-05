@@ -1,0 +1,184 @@
+/* ── Changelog page ──────────────────────────────────────── */
+.changelog-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Active nav link */
+.site-header__nav { display: flex; gap: 24px; align-items: center; }
+.site-header__link--active { color: rgba(255,255,255,0.75) !important; }
+
+.changelog-body {
+  flex: 1;
+  position: relative;
+}
+
+.changelog-gradient {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 500px;
+  pointer-events: none;
+  background: radial-gradient(ellipse 60% 45% at 50% 0%, color-mix(in srgb, #ef6c00 9%, transparent), transparent 70%);
+}
+
+.changelog-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 72px 40px 96px;
+  position: relative;
+}
+
+.changelog-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 16px;
+}
+
+.changelog-title {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.08;
+  margin-bottom: 12px;
+}
+
+.changelog-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 56px;
+}
+
+.changelog-loading {
+  font-size: 13px;
+  color: rgba(255,255,255,0.25);
+}
+
+.changelog-error {
+  font-size: 13px;
+  color: rgba(255,255,255,0.3);
+}
+
+.changelog-error-link {
+  color: #ef6c00;
+  text-decoration: none;
+}
+.changelog-error-link:hover { opacity: 0.8; }
+
+/* ── Entry list ──────────────────────────────────────────── */
+.changelog-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Release card ────────────────────────────────────────── */
+.cl-card {
+  border-radius: 16px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.cl-card:hover {
+  border-color: rgba(255,255,255,0.12);
+}
+
+.cl-card__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.cl-card__version {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #ef6c00;
+}
+
+.cl-card__date {
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.cl-card__notes {
+  padding: 16px 24px 20px;
+  color: rgba(255,255,255,0.78);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* ── Note content elements ───────────────────────────────── */
+.cl-subheader {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+.cl-subheader:first-child { margin-top: 0; }
+
+.cl-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cl-bullet {
+  padding-left: 14px;
+  position: relative;
+  color: rgba(255,255,255,0.75);
+}
+
+.cl-bullet::before {
+  content: '–';
+  position: absolute;
+  left: 0;
+  color: rgba(255,255,255,0.25);
+}
+
+.cl-para {
+  color: rgba(255,255,255,0.45);
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.cl-para a {
+  color: #ef6c00;
+  text-decoration: none;
+}
+
+.cl-para a:hover { opacity: 0.8; }
+
+.cl-code {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 0.88em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.85);
+}
+
+@media (max-width: 600px) {
+  .changelog-inner { padding: 48px 20px 72px; }
+  .cl-card__header { flex-direction: column; gap: 4px; }
+  .site-header__nav { gap: 16px; }
+}

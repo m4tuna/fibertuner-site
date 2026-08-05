@@ -85,7 +85,10 @@ export default function DownloadsPage() {
     <div className="downloads">
       <header className="site-header">
         <a href="/" className="site-header__logo">Fibertuner</a>
-        <a href="/#pricing" className="site-header__link">Pricing</a>
+        <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+          <a href="/#pricing" className="site-header__link">Pricing</a>
+          <a href="/changelog" className="site-header__link">Changelog</a>
+        </nav>
       </header>
 
       <div className="downloads__body">
