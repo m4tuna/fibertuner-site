@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.28.0] - 2026-08-05
+
+## What's Changed
+* feat: AI Playlist modal revamp + drawer stays open during modal by @m4tuna in https://github.com/m4tuna/fibertuner/pull/102
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.27.0...v2.28.0
+
 ## [2.27.0] - 2026-08-05
 
 ## What's Changed
