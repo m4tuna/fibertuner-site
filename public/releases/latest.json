@@ -1,10 +1,10 @@
 {
-  "version": "2.26.1",
-  "date": "2026-08-04",
+  "version": "2.27.0",
+  "date": "2026-08-05",
   "notes": "",
   "platforms": {
-    "mac": "https://github.com/m4tuna/fibertuner-site/releases/download/v2.26.1/Fibertuner-mac.dmg",
-    "windows": "https://github.com/m4tuna/fibertuner-site/releases/download/v2.26.1/Fibertuner-win.exe",
-    "linux": "https://github.com/m4tuna/fibertuner-site/releases/download/v2.26.1/Fibertuner-linux.AppImage"
+    "mac": "https://github.com/m4tuna/fibertuner-site/releases/download/v2.27.0/Fibertuner-mac.dmg",
+    "windows": "https://github.com/m4tuna/fibertuner-site/releases/download/v2.27.0/Fibertuner-win.exe",
+    "linux": "https://github.com/m4tuna/fibertuner-site/releases/download/v2.27.0/Fibertuner-linux.AppImage"
   }
 }
