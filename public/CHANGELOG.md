@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.30.0] - 2026-08-05
+
+## What's Changed
+* feat: replace GitHub compare link with fibertuner.com/changelog in release notes modal by @m4tuna in https://github.com/m4tuna/fibertuner/pull/103
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.29.0...v2.30.0
+
 ## [2.29.0] - 2026-08-05
 
 ## What's Changed
