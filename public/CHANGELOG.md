@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.29.0] - 2026-08-05
+
+## What's Changed
+* feat: radius dropdown + 6-hour Bandsintown cache for Events page by @m4tuna in https://github.com/m4tuna/fibertuner/pull/101
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.28.0...v2.29.0
+
 ## [2.28.0] - 2026-08-05
 
 ## What's Changed
