@@ -1430,6 +1430,7 @@ export default function BroadcastPage() {
   const searchRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSearchQueryRef = useRef<string>('')
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const drinkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Fetch initial session row
   useEffect(() => {
@@ -1507,8 +1508,9 @@ export default function BroadcastPage() {
           setSession(prev => prev ? { ...prev, state: 'stopped', expiresAt: new Date(0).toISOString() } : prev)
         }
         if (payload.type === 'power-hour-drink') {
+          if (drinkTimeoutRef.current) clearTimeout(drinkTimeoutRef.current)
           setDrinkFlashing(true)
-          setTimeout(() => setDrinkFlashing(false), 2000)
+          drinkTimeoutRef.current = setTimeout(() => setDrinkFlashing(false), 2000)
         }
       })
       .subscribe((status) => {
@@ -1531,6 +1533,7 @@ export default function BroadcastPage() {
       channelSubscribedRef.current = false
       channelRef.current = null
       ch.unsubscribe()
+      if (drinkTimeoutRef.current) clearTimeout(drinkTimeoutRef.current)
     }
   }, [code, joined, myUserId, myDisplayName])
 
@@ -1604,6 +1607,11 @@ export default function BroadcastPage() {
     setShowNameModal(false)
     setJoined(true)
   }
+
+  // Close search overlay when Power Hour activates mid-session
+  useEffect(() => {
+    if (session?.powerHour?.active) setShowSearch(false)
+  }, [session?.powerHour?.active])
 
   // Close search and reset all search state
   const closeSearch = useCallback(() => {
