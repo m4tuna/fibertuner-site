@@ -2,6 +2,15 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.31.0] - 2026-08-06
+
+## What's Changed
+* fix: AI playlist modal polish by @m4tuna in https://github.com/m4tuna/fibertuner/pull/104
+* feat: sort home playlists by most recently played by @m4tuna in https://github.com/m4tuna/fibertuner/pull/106
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.30.0...v2.31.0
+
 ## [2.30.0] - 2026-08-05
 
 ## What's Changed
