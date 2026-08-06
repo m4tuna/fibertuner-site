@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.31.1] - 2026-08-06
+
+## What's Changed
+* fix: sync play/pause state to UI immediately when TV mute/unmute fires by @m4tuna in https://github.com/m4tuna/fibertuner/pull/105
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.31.0...v2.31.1
+
 ## [2.31.0] - 2026-08-06
 
 ## What's Changed
