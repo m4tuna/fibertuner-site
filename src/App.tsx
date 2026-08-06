@@ -232,7 +232,7 @@ export default function App() {
                 period="/yr"
                 features={['Any Plex server you have access to', 'Up to 3 machines', 'All features included']}
                 cta="Get Annual — $12/yr"
-                url="https://fibertuner.lemonsqueezy.com/checkout/buy/fdfac193-01f0-475e-947a-8ed165ef520e"
+                url="https://fibertuner.lemonsqueezy.com/checkout/buy/add4dde9-bb85-4124-be19-b75627f5e60e"
                 highlighted={false}
               />
               <PricingCard
@@ -242,7 +242,7 @@ export default function App() {
                 badge="Best value"
                 features={['Any Plex server you have access to', 'Up to 3 machines', 'All features included', 'All future updates']}
                 cta="Get Lifetime — $29"
-                url="https://fibertuner.lemonsqueezy.com/checkout/buy/e0d0ab6c-dace-4f93-9ad2-0b5b21514d08"
+                url="https://fibertuner.lemonsqueezy.com/checkout/buy/2d033d45-75e1-4ed6-aaef-b1e44b598217"
                 highlighted={true}
               />
             </div>
@@ -260,7 +260,7 @@ export default function App() {
                 period="/yr"
                 features={['Unlimited users on your server', 'Users just log in with Plex', 'All features included']}
                 cta="Set up Server Plan — $29/yr"
-                url="https://fibertuner.lemonsqueezy.com/checkout/buy/20137415-00d9-4779-8581-45b0223066f0"
+                url="https://fibertuner.lemonsqueezy.com/checkout/buy/36250bf9-3443-4027-b1d6-2596321531e4"
                 highlighted={false}
               />
               <PricingCard
@@ -270,7 +270,7 @@ export default function App() {
                 badge="One-time"
                 features={['Unlimited users on your server', 'Users just log in with Plex', 'All features included', 'All future updates']}
                 cta="Get Server Lifetime — $69"
-                url="https://fibertuner.lemonsqueezy.com/checkout/buy/e0d0ab6c-dace-4f93-9ad2-0b5b21514d08"
+                url="https://fibertuner.lemonsqueezy.com/checkout/buy/2dda2c28-66b1-458b-b399-fdc866964dd0"
                 highlighted={true}
               />
             </div>
