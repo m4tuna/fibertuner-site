@@ -10,6 +10,7 @@ import type {
   BroadcastPlaylist,
   BroadcastParticipant,
   BroadcastCommand,
+  PowerHourSnapshot,
 } from '../lib/broadcastTypes'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ function rowToSession(row: Record<string, unknown>): BroadcastSession {
     broadcastAt:   row.broadcast_at ? new Date(row.broadcast_at as string).getTime() : Date.now(),
     expiresAt:     row.expires_at as string,
     updatedAt:     row.updated_at as string,
+    powerHour:     (row.power_hour as PowerHourSnapshot | null) ?? null,
   }
 }
 
@@ -1189,6 +1191,63 @@ function SearchOverlay({
   )
 }
 
+// ── Power Hour banner ─────────────────────────────────────────────────────────
+
+function PowerHourBanner({ powerHour }: { powerHour: PowerHourSnapshot }) {
+  const [localCountdown, setLocalCountdown] = useState(powerHour.countdown)
+
+  useEffect(() => {
+    const elapsed = Math.floor((Date.now() - powerHour.broadcastAt) / 1000)
+    const adjusted = Math.max(0, powerHour.countdown - elapsed)
+    setLocalCountdown(adjusted)
+
+    if (powerHour.paused) return
+    const interval = setInterval(() => {
+      setLocalCountdown(prev => Math.max(0, prev - 1))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [powerHour.broadcastAt, powerHour.countdown, powerHour.paused])
+
+  return (
+    <div style={{
+      background: 'rgba(245, 158, 11, 0.12)',
+      border: '1px solid rgba(245, 158, 11, 0.3)',
+      borderRadius: 12,
+      padding: '12px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 16,
+    }}>
+      <span style={{ fontSize: 24 }}>🍺</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>
+          Power Hour · Song {powerHour.songNumber}/{powerHour.songCount}
+        </div>
+        {powerHour.sourceName && (
+          <div style={{ fontSize: 12, opacity: 0.6 }}>{powerHour.sourceName}</div>
+        )}
+      </div>
+      <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 20, fontWeight: 700, color: localCountdown <= 10 ? '#f59e0b' : '#fff' }}>
+        {localCountdown}s
+      </div>
+    </div>
+  )
+}
+
+function PowerHourComplete({ powerHour }: { powerHour: PowerHourSnapshot }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '24px 0' }}>
+      <div style={{ fontSize: 48, marginBottom: 8 }}>🍺</div>
+      <div style={{ fontWeight: 700, fontSize: 20 }}>Power Hour Complete!</div>
+      <div style={{ opacity: 0.6, marginTop: 4 }}>
+        Survived {powerHour.songCount} songs
+        {powerHour.sourceName ? ` from ${powerHour.sourceName}` : ''}
+      </div>
+    </div>
+  )
+}
+
 // ── Share modal ───────────────────────────────────────────────────────────────
 
 function ShareModal({ code, onClose }: { code: string; onClose: () => void }) {
@@ -1344,6 +1403,7 @@ export default function BroadcastPage() {
   const [bannerDismissed, setBannerDismissed] = useState<boolean>(() => {
     try { return sessionStorage.getItem('ftAppBannerDismissed') === '1' } catch { return false }
   })
+  const [drinkFlashing, setDrinkFlashing] = useState(false)
 
   const [myUserId] = useState<string>(() => {
     try {
@@ -1445,6 +1505,10 @@ export default function BroadcastPage() {
         }
         if (payload.type === 'broadcast-ended') {
           setSession(prev => prev ? { ...prev, state: 'stopped', expiresAt: new Date(0).toISOString() } : prev)
+        }
+        if (payload.type === 'power-hour-drink') {
+          setDrinkFlashing(true)
+          setTimeout(() => setDrinkFlashing(false), 2000)
         }
       })
       .subscribe((status) => {
@@ -1795,9 +1859,32 @@ export default function BroadcastPage() {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
         }
+        @keyframes powerHourDrink {
+          0% { opacity: 0; }
+          8% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { opacity: 0; }
+        }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { background: ${BG}; overflow-x: hidden; max-width: 100%; }
       `}</style>
+
+      {/* DRINK flash overlay */}
+      {drinkFlashing && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(245, 158, 11, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'powerHourDrink 2s ease-out forwards',
+          pointerEvents: 'none',
+        }}>
+          <div style={{ fontSize: 72, fontWeight: 900, color: '#fff', letterSpacing: 4 }}>DRINK! 🍺</div>
+        </div>
+      )}
 
       {/* Share modal */}
       {showShareModal && (
@@ -1995,6 +2082,10 @@ export default function BroadcastPage() {
 
           {/* ── Track info + vote ──────────────────────────────────────────── */}
           <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+            {session.powerHour?.completed && <PowerHourComplete powerHour={session.powerHour} />}
+            {session.powerHour?.active && !session.powerHour.completed && (
+              <PowerHourBanner powerHour={session.powerHour} />
+            )}
             {currentTrack ? (
               <>
                 <h1 style={{
@@ -2032,21 +2123,27 @@ export default function BroadcastPage() {
 
           {/* ── Search bar (tappable pill) ─────────────────────────────────── */}
           <div style={{ padding: '12px 20px 4px', flexShrink: 0 }}>
-            <button
-              onClick={() => setShowSearch(true)}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                background: 'rgba(255,255,255,0.07)', border: `1px solid ${BORDER}`,
-                borderRadius: 22, padding: '11px 18px',
-                cursor: 'pointer', fontFamily: FONT,
-                transition: 'background 0.2s',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT_MUTED} strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <span style={{ fontSize: 14, color: TEXT_MUTED }}>Search to add a track…</span>
-            </button>
+            {session.powerHour?.active ? (
+              <div style={{ textAlign: 'center', opacity: 0.5, padding: '12px 0', fontSize: 13 }}>
+                🔒 Queue locked during Power Hour
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowSearch(true)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  background: 'rgba(255,255,255,0.07)', border: `1px solid ${BORDER}`,
+                  borderRadius: 22, padding: '11px 18px',
+                  cursor: 'pointer', fontFamily: FONT,
+                  transition: 'background 0.2s',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT_MUTED} strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <span style={{ fontSize: 14, color: TEXT_MUTED }}>Search to add a track…</span>
+              </button>
+            )}
           </div>
 
           {/* ── Queue ─────────────────────────────────────────────────────── */}

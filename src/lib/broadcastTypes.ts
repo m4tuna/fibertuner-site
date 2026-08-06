@@ -13,6 +13,18 @@ export interface BroadcastTrack {
 export type BroadcastPlayState = 'playing' | 'paused' | 'stopped'
 export type BroadcastSource    = 'sonos' | 'local' | 'airplay'
 
+export interface PowerHourSnapshot {
+  active: boolean
+  songNumber: number
+  songCount: number
+  countdown: number
+  segmentDuration: number
+  paused: boolean
+  completed: boolean
+  sourceName: string | null
+  broadcastAt: number  // timestamp (ms) when snapshot was sent — for local countdown interpolation
+}
+
 export interface BroadcastSession {
   code:               string
   hostUserId:         string
@@ -27,6 +39,7 @@ export interface BroadcastSession {
   broadcastAt:        number        // Unix ms
   expiresAt:          string
   updatedAt:          string
+  powerHour:          PowerHourSnapshot | null
 }
 
 export interface BroadcastParticipant {
@@ -70,3 +83,4 @@ export type BroadcastCommand =
   | { type: 'browse-results';   requestId: string; kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] }
   | { type: 'host-meta';        accentColor: string }
   | { type: 'broadcast-ended' }
+  | { type: 'power-hour-drink'; songNumber: number }
