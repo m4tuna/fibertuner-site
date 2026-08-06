@@ -258,6 +258,41 @@
 
 .after-install__strong { color: rgba(255,255,255,0.55); }
 
+/* ── Mobile notice ───────────────────────────────────────── */
+.mobile-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 40px 32px;
+  background: color-mix(in srgb, var(--accent) 5%, rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  margin-bottom: 40px;
+}
+
+.mobile-notice__icon {
+  color: rgba(255,255,255,0.3);
+  width: 36px;
+  height: 36px;
+}
+
+.mobile-notice__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: -0.3px;
+}
+
+.mobile-notice__text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.75;
+  max-width: 340px;
+  margin: 0;
+}
+
 /* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .downloads__inner { padding: 52px 20px 60px; }

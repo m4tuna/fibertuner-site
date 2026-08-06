@@ -34,6 +34,11 @@ const PLATFORMS: PlatformInfo[] = [
   { key: 'linux',   label: 'Linux',   sublabel: 'x64 AppImage',          format: '.AppImage', icon: LinuxIcon() },
 ]
 
+function isMobileDevice(): boolean {
+  const ua = navigator.userAgent
+  return /iPhone|iPad|iPod|Android/i.test(ua)
+}
+
 function detectPlatform(): 'mac' | 'windows' | 'linux' | null {
   const ua = navigator.userAgent.toLowerCase()
   if (ua.includes('mac'))   return 'mac'
@@ -49,7 +54,8 @@ function formatDate(iso: string) {
 export default function DownloadsPage() {
   const [release, setRelease] = useState<Release | null>(null)
   const [error, setError]     = useState(false)
-  const detectedPlatform      = detectPlatform()
+  const mobile                = isMobileDevice()
+  const detectedPlatform      = mobile ? null : detectPlatform()
   const params                = new URLSearchParams(window.location.search)
   const isSuccess             = params.has('success')
   const serverParam           = params.get('server')
@@ -148,47 +154,58 @@ export default function DownloadsPage() {
             </p>
           )}
 
-          <div className="platform-grid">
-            {PLATFORMS.map(p => {
-              const url        = release?.platforms[p.key]
-              const isDetected = detectedPlatform === p.key
-              return (
-                <div
-                  key={p.key}
-                  className={`platform-card${isDetected ? ' platform-card--detected' : ''}`}
-                >
-                  <div className="platform-card__top">
-                    <div
-                      className="platform-card__icon"
-                      dangerouslySetInnerHTML={{ __html: p.icon }}
-                    />
-                    {isDetected && (
-                      <span className="platform-card__badge">Your system</span>
+          {mobile ? (
+            <div className="mobile-notice">
+              <div className="mobile-notice__icon" dangerouslySetInnerHTML={{ __html: MobileIcon() }} />
+              <div className="mobile-notice__title">Mobile app coming soon</div>
+              <p className="mobile-notice__text">
+                The Fibertuner mobile app is in development. In the meantime,
+                visit from your Mac, PC, or Linux machine to download the desktop app.
+              </p>
+            </div>
+          ) : (
+            <div className="platform-grid">
+              {PLATFORMS.map(p => {
+                const url        = release?.platforms[p.key]
+                const isDetected = detectedPlatform === p.key
+                return (
+                  <div
+                    key={p.key}
+                    className={`platform-card${isDetected ? ' platform-card--detected' : ''}`}
+                  >
+                    <div className="platform-card__top">
+                      <div
+                        className="platform-card__icon"
+                        dangerouslySetInnerHTML={{ __html: p.icon }}
+                      />
+                      {isDetected && (
+                        <span className="platform-card__badge">Your system</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="platform-card__name">{p.label}</div>
+                      <div className="platform-card__sublabel">{p.sublabel}</div>
+                    </div>
+
+                    {url ? (
+                      <a
+                        href={url}
+                        download
+                        className="platform-card__btn"
+                      >
+                        Download {p.format}
+                      </a>
+                    ) : (
+                      <div className="platform-card__btn platform-card__btn--unavailable">
+                        Coming soon
+                      </div>
                     )}
                   </div>
-
-                  <div>
-                    <div className="platform-card__name">{p.label}</div>
-                    <div className="platform-card__sublabel">{p.sublabel}</div>
-                  </div>
-
-                  {url ? (
-                    <a
-                      href={url}
-                      download
-                      className="platform-card__btn"
-                    >
-                      Download {p.format}
-                    </a>
-                  ) : (
-                    <div className="platform-card__btn platform-card__btn--unavailable">
-                      Coming soon
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
 
           {release?.notes && (
             <div className="release-notes">
@@ -214,6 +231,10 @@ export default function DownloadsPage() {
       <Footer appName="Fibertuner" githubRepo={GITHUB} />
     </div>
   )
+}
+
+function MobileIcon() {
+  return `<svg viewBox="0 0 24 24" fill="currentColor" width="36" height="36"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>`
 }
 
 function MacIcon() {
