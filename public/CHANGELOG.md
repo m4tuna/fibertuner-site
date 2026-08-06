@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.31.2] - 2026-08-06
+
+## What's Changed
+* fix: improve radio artist matching via client-side library scan by @m4tuna in https://github.com/m4tuna/fibertuner/pull/107
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.31.1...v2.31.2
+
 ## [2.31.1] - 2026-08-06
 
 ## What's Changed
