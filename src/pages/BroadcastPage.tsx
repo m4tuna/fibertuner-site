@@ -1432,7 +1432,12 @@ export default function BroadcastPage() {
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const drinkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Fetch initial session row
+  // Fetch initial session row — with retry.
+  // The host writes a placeholder row to Supabase immediately after generating
+  // the QR code, but there is a short race window (~0-2 s) where the upsert is
+  // still in-flight. If the guest scans before the row lands, .single() returns
+  // an error and the page would wrongly show "not active". Retrying 3 times at
+  // 1.5 s intervals closes this window without a perceptible UX delay.
   useEffect(() => {
     if (!code) {
       setError('Invalid broadcast code.')
@@ -1440,30 +1445,47 @@ export default function BroadcastPage() {
       return
     }
 
-    supabase
-      .from('broadcast_sessions')
-      .select('*')
-      .eq('code', code)
-      .single()
-      .then(({ data, error: err }) => {
-        if (err || !data) {
-          setError('Broadcast not found.')
-          setLoading(false)
-          return
-        }
-        const s = rowToSession(data as Record<string, unknown>)
-        setSession(s)
-        setLoading(false)
+    let cancelled = false
+    const MAX_ATTEMPTS = 4
+    const RETRY_MS = 1500
 
-        if (!isSessionEnded(s)) {
-          const savedName = getSavedName()
-          if (savedName) {
-            setJoined(true)
-          } else {
-            setShowNameModal(true)
-          }
+    async function fetchSession(attempt: number): Promise<void> {
+      if (cancelled) return
+      const { data, error: err } = await supabase
+        .from('broadcast_sessions')
+        .select('*')
+        .eq('code', code)
+        .single()
+
+      if (cancelled) return
+
+      if (err || !data) {
+        if (attempt < MAX_ATTEMPTS) {
+          // Row not found yet — wait and retry
+          await new Promise(resolve => setTimeout(resolve, RETRY_MS))
+          return fetchSession(attempt + 1)
         }
-      })
+        setError('Broadcast not found.')
+        setLoading(false)
+        return
+      }
+
+      const s = rowToSession(data as Record<string, unknown>)
+      setSession(s)
+      setLoading(false)
+
+      if (!isSessionEnded(s)) {
+        const savedName = getSavedName()
+        if (savedName) {
+          setJoined(true)
+        } else {
+          setShowNameModal(true)
+        }
+      }
+    }
+
+    fetchSession(1)
+    return () => { cancelled = true }
   }, [code])
 
   // Sync album art from the session's current track (Plex thumb URL, already authenticated)
