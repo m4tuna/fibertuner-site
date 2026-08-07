@@ -2059,6 +2059,7 @@ export default function BroadcastPage() {
   // Current and upcoming tracks
   const currentTrack = session.currentTrack
   const upcomingQueue = session.queue.slice(session.currentIndex + 1)
+  const pastQueue = session.queue.slice(0, session.currentIndex)
 
   const displayArt = artUrl || currentTrack?.artUrl
 
@@ -2273,6 +2274,12 @@ export default function BroadcastPage() {
           </header>
 
           {/* ── Album art ──────────────────────────────────────────────────── */}
+          {(() => {
+            const guessingActive = !!(session.powerHour?.guessingEnabled && session.powerHour?.active && !session.powerHour?.completed)
+            const revealedFields = session.powerHour?.revealedFields ?? { title: false, artist: false, album: false }
+            const allRevealed = revealedFields.title && revealedFields.artist && revealedFields.album
+            const artBlurred = guessingActive && !allRevealed
+            return (
           <div style={{ padding: '8px 24px 0', flexShrink: 0 }}>
             <div style={{
               width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
@@ -2281,7 +2288,7 @@ export default function BroadcastPage() {
             }}>
               {displayArt ? (
                 <img src={displayArt} alt={currentTrack?.album ?? ''}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: artBlurred ? 'blur(12px)' : 'none', transition: 'filter 0.4s ease' }} />
               ) : (
                 <div style={{
                   width: '100%', height: '100%',
@@ -2294,6 +2301,8 @@ export default function BroadcastPage() {
               )}
             </div>
           </div>
+            )
+          })()}
 
           {/* ── Track info + vote ──────────────────────────────────────────── */}
           <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
@@ -2387,7 +2396,35 @@ export default function BroadcastPage() {
           </div>
 
           {/* ── Queue ─────────────────────────────────────────────────────── */}
+          {(() => {
+            const guessingActive = !!(session.powerHour?.guessingEnabled && session.powerHour?.active && !session.powerHour?.completed)
+            const sessionCompleted = !!(session.powerHour?.completed)
+
+            return (
           <div style={{ flex: 1, padding: '16px 20px', paddingBottom: bannerDismissed ? 'max(32px, env(safe-area-inset-bottom, 0px))' : 'max(100px, calc(env(safe-area-inset-bottom, 0px) + 80px))' }}>
+
+            {/* Past songs — always shown with full metadata */}
+            {pastQueue.length > 0 && (
+              <>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, color: TEXT_MUTED,
+                  letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
+                }}>
+                  Previously Played
+                </div>
+                {pastQueue.map((track, i) => (
+                  <QueueRow
+                    key={`past-${track.uri}-${i}`}
+                    track={track}
+                    isCurrentTrack={false}
+                    myUserId={myUserId}
+                    onVote={handleVote}
+                  />
+                ))}
+                <div style={{ height: 16 }} />
+              </>
+            )}
+
             <div style={{
               fontSize: 10, fontWeight: 700, color: TEXT_MUTED,
               letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
@@ -2412,6 +2449,26 @@ export default function BroadcastPage() {
                   search for tracks
                 </button>{' '}to add!
               </div>
+            ) : guessingActive ? (
+              /* Guessing mode: upcoming songs are hidden — show placeholder rows */
+              upcomingQueue.map((track, i) => (
+                <div
+                  key={`${track.uri}-${session.currentIndex + 1 + i}`}
+                  style={{
+                    height: 64, display: 'flex', alignItems: 'center', gap: 12,
+                    borderBottom: `1px solid ${BORDER}`,
+                    borderLeft: '2px solid transparent',
+                  }}
+                >
+                  {/* Blurred art placeholder */}
+                  <div style={{ width: 44, height: 44, borderRadius: 6, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
+                  {/* Hidden track info */}
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ height: 10, borderRadius: 4, background: 'rgba(255,255,255,0.1)', width: '60%' }} />
+                    <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', width: '40%' }} />
+                  </div>
+                </div>
+              ))
             ) : (
               upcomingQueue.map((track, i) => (
                 <QueueRow
@@ -2424,7 +2481,16 @@ export default function BroadcastPage() {
                 />
               ))
             )}
+
+            {/* After session ends in guessing mode, reveal what was hidden */}
+            {sessionCompleted && session.powerHour?.guessingEnabled && upcomingQueue.length > 0 && (
+              <p style={{ fontSize: 12, color: TEXT_MUTED, textAlign: 'center', marginTop: 8 }}>
+                Session complete — all songs revealed above
+              </p>
+            )}
           </div>
+            )
+          })()}
         </div>
       </div>
     </>
