@@ -1527,7 +1527,21 @@ export default function BroadcastPage() {
           if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
         }
         if (payload.type === 'broadcast-ended') {
-          setSession(prev => prev ? { ...prev, state: 'stopped', expiresAt: new Date(0).toISOString() } : prev)
+          // Re-fetch to confirm — Realtime can replay this event on reconnect,
+          // which would falsely end an active new session that reused the same code.
+          supabase
+            .from('broadcast_sessions')
+            .select('*')
+            .eq('code', code)
+            .single()
+            .then(({ data }) => {
+              if (!data || isSessionEnded(rowToSession(data as Record<string, unknown>))) {
+                setSession(prev =>
+                  prev ? { ...prev, state: 'stopped', expiresAt: new Date(0).toISOString() } : prev
+                )
+              }
+              // If the session is still active, ignore this stale replay event
+            })
         }
         if (payload.type === 'power-hour-drink') {
           if (drinkTimeoutRef.current) clearTimeout(drinkTimeoutRef.current)
