@@ -1693,11 +1693,25 @@ export default function BroadcastPage() {
         if (payload.type === 'power-hour-drink') {
           if (drinkTimeoutRef.current) clearTimeout(drinkTimeoutRef.current)
           setDrinkFlashing(true)
-          // In guessing mode capture the current track for the reveal moment
+          // In guessing mode, build the reveal track showing real values for
+          // fields the guests already guessed, and '???' for still-hidden fields.
+          // The host redacts unrevealed fields to '' in currentTrack; revealed
+          // fields were restored by guess-result handlers, so their values are real.
           const isGuessing = guessingEnabledRef.current
           if (isGuessing) {
             setSession(prev => {
-              setDrinkRevealTrack(prev?.currentTrack ?? null)
+              const track = prev?.currentTrack
+              const revealedFields = prev?.powerHour?.revealedFields ?? { title: false, artist: false, album: false }
+              if (track) {
+                setDrinkRevealTrack({
+                  ...track,
+                  title:  revealedFields.title  ? track.title  : '???',
+                  artist: revealedFields.artist ? track.artist : '???',
+                  album:  revealedFields.album  ? track.album  : '???',
+                })
+              } else {
+                setDrinkRevealTrack(null)
+              }
               return prev
             })
           } else {
