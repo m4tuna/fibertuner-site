@@ -95,7 +95,16 @@ function accentFg(hex: string): string {
 
 function BlurText({ text, blurred }: { text: string; blurred: boolean }) {
   return (
-    <span style={{ filter: blurred ? 'blur(6px)' : 'none', userSelect: blurred ? 'none' : 'auto', transition: 'filter 0.4s ease' }}>
+    <span style={{
+      filter: blurred ? 'blur(10px)' : 'none',
+      userSelect: blurred ? 'none' : 'auto',
+      transition: 'filter 0.4s ease',
+      // Pad+negative-margin so blur has room to render without being clipped
+      // by parent overflow:hidden. The negative margin compensates layout shift.
+      padding: blurred ? '4px 8px' : undefined,
+      margin: blurred ? '-4px -8px' : undefined,
+      display: 'inline-block',
+    }}>
       {text || 'Unknown'}
     </span>
   )
@@ -2412,7 +2421,14 @@ export default function BroadcastPage() {
             }}>
               {displayArt ? (
                 <img src={displayArt} alt={currentTrack?.album ?? ''}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: artBlurred ? 'blur(12px)' : 'none', transition: 'filter 0.4s ease' }} />
+                  style={{
+                    width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+                    filter: artBlurred ? 'blur(20px)' : 'none',
+                    // Scale up slightly so the blur edges extend outside the
+                    // overflow:hidden container and don't clip on any side.
+                    transform: artBlurred ? 'scale(1.08)' : 'none',
+                    transition: 'filter 0.4s ease, transform 0.4s ease',
+                  }} />
               ) : (
                 <div style={{
                   width: '100%', height: '100%',
@@ -2447,34 +2463,49 @@ export default function BroadcastPage() {
             )}
             {currentTrack ? (
               <>
-                <h1 style={{
-                  fontSize: 22, fontWeight: 700, lineHeight: 1.2, marginBottom: 4,
-                  color: TEXT_PRIMARY,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>
-                  <BlurText
-                    text={currentTrack.title}
-                    blurred={!!(session.powerHour?.guessingEnabled && currentTrack.title === '')}
-                  />
-                </h1>
-                <p style={{
-                  fontSize: 14, color: TEXT_SECONDARY, marginBottom: 2,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>
-                  <BlurText
-                    text={currentTrack.artist}
-                    blurred={!!(session.powerHour?.guessingEnabled && currentTrack.artist === '')}
-                  />
-                  {currentTrack.album ? (
-                    <span style={{ color: TEXT_MUTED }}>
-                      {' · '}
-                      <BlurText
-                        text={currentTrack.album}
-                        blurred={!!(session.powerHour?.guessingEnabled && currentTrack.album === '')}
-                      />
-                    </span>
-                  ) : null}
-                </p>
+                {(() => {
+                  const titleBlurred = !!(session.powerHour?.guessingEnabled && currentTrack.title === '')
+                  const artistBlurred = !!(session.powerHour?.guessingEnabled && currentTrack.artist === '')
+                  const albumBlurred = !!(session.powerHour?.guessingEnabled && currentTrack.album === '')
+                  const anyBlurred = titleBlurred || artistBlurred || albumBlurred
+                  return (
+                    <>
+                      <h1 style={{
+                        fontSize: 22, fontWeight: 700, lineHeight: 1.2, marginBottom: 4,
+                        color: TEXT_PRIMARY,
+                        whiteSpace: 'nowrap',
+                        // Allow overflow when blurred so the blur effect isn't clipped
+                        overflow: titleBlurred ? 'visible' : 'hidden',
+                        textOverflow: titleBlurred ? 'clip' : 'ellipsis',
+                      }}>
+                        <BlurText
+                          text={currentTrack.title}
+                          blurred={titleBlurred}
+                        />
+                      </h1>
+                      <p style={{
+                        fontSize: 14, color: TEXT_SECONDARY, marginBottom: 2,
+                        whiteSpace: 'nowrap',
+                        overflow: anyBlurred ? 'visible' : 'hidden',
+                        textOverflow: anyBlurred ? 'clip' : 'ellipsis',
+                      }}>
+                        <BlurText
+                          text={currentTrack.artist}
+                          blurred={artistBlurred}
+                        />
+                        {currentTrack.album ? (
+                          <span style={{ color: TEXT_MUTED }}>
+                            {' · '}
+                            <BlurText
+                              text={currentTrack.album}
+                              blurred={albumBlurred}
+                            />
+                          </span>
+                        ) : null}
+                      </p>
+                    </>
+                  )
+                })()}
               </>
             ) : (
               <h1 style={{ fontSize: 17, fontWeight: 600, color: TEXT_MUTED }}>
