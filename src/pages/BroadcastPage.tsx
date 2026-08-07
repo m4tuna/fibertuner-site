@@ -11,6 +11,7 @@ import type {
   BroadcastParticipant,
   BroadcastCommand,
   PowerHourSnapshot,
+  LeaderboardEntry,
 } from '../lib/broadcastTypes'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -88,6 +89,16 @@ function accentFg(hex: string): string {
   } catch {
     return '#111'
   }
+}
+
+// ── BlurText helper ───────────────────────────────────────────────────────────
+
+function BlurText({ text, blurred }: { text: string; blurred: boolean }) {
+  return (
+    <span style={{ filter: blurred ? 'blur(6px)' : 'none', userSelect: blurred ? 'none' : 'auto', transition: 'filter 0.4s ease' }}>
+      {text || 'Unknown'}
+    </span>
+  )
 }
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
@@ -1191,6 +1202,128 @@ function SearchOverlay({
   )
 }
 
+// ── GuessPanel ────────────────────────────────────────────────────────────────
+
+function GuessPanel({
+  powerHour,
+  lastResult,
+  onGuess,
+}: {
+  powerHour: PowerHourSnapshot
+  lastResult: { correct: boolean; field: string; points: number } | null
+  onGuess: (field: 'title' | 'artist' | 'album', value: string) => void
+}) {
+  const [field, setField] = useState<'title' | 'artist' | 'album'>('title')
+  const [input, setInput] = useState('')
+
+  const revealedFields = powerHour.revealedFields ?? { title: false, artist: false, album: false }
+  const allRevealed = revealedFields.title && revealedFields.artist && revealedFields.album
+
+  // Auto-select first unrevealed field when current field gets revealed
+  useEffect(() => {
+    if (revealedFields[field]) {
+      const nextField = (['title', 'artist', 'album'] as const).find(f => !revealedFields[f])
+      if (nextField) setField(nextField)
+    }
+  }, [revealedFields, field])
+
+  const handleSubmit = () => {
+    if (!input.trim()) return
+    onGuess(field, input.trim())
+    setInput('')
+  }
+
+  const fields: Array<{ key: 'title' | 'artist' | 'album'; label: string }> = [
+    { key: 'title', label: 'Title' },
+    { key: 'artist', label: 'Artist' },
+    { key: 'album', label: 'Album' },
+  ]
+
+  if (allRevealed) return <p style={{ textAlign: 'center', opacity: 0.5, fontSize: 13, marginBottom: 12 }}>All fields revealed!</p>
+
+  return (
+    <div style={{ padding: '12px', background: 'rgba(255,255,255,0.06)', borderRadius: 12, marginBottom: 12 }}>
+      {/* Field selector */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        {fields.map(f => {
+          const isRevealed = revealedFields[f.key]
+          return (
+            <button
+              key={f.key}
+              disabled={isRevealed}
+              onClick={() => setField(f.key)}
+              style={{
+                flex: 1, padding: '6px 0', borderRadius: 8, border: 'none',
+                background: field === f.key && !isRevealed ? '#e5a00d' : 'rgba(255,255,255,0.1)',
+                color: isRevealed ? 'rgba(255,255,255,0.3)' : '#fff',
+                cursor: isRevealed ? 'default' : 'pointer',
+                fontSize: 13, fontWeight: field === f.key && !isRevealed ? 600 : 400,
+                textDecoration: isRevealed ? 'line-through' : 'none',
+                fontFamily: FONT,
+              }}
+            >
+              {f.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Input + Submit */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          placeholder={`Guess the ${field}...`}
+          style={{
+            flex: 1, padding: '8px 12px', borderRadius: 8,
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+            color: '#fff', fontSize: 14, outline: 'none', fontFamily: FONT,
+          }}
+        />
+        <button
+          onClick={handleSubmit}
+          style={{
+            padding: '8px 16px', borderRadius: 8, border: 'none',
+            background: '#e5a00d', color: '#000', fontWeight: 600, cursor: 'pointer',
+            fontFamily: FONT,
+          }}
+        >
+          Guess
+        </button>
+      </div>
+
+      {/* Last result feedback */}
+      {lastResult && (
+        <p style={{ marginTop: 8, fontSize: 13, color: lastResult.correct ? '#4ade80' : '#f87171', textAlign: 'center', margin: '8px 0 0' }}>
+          {lastResult.correct ? `+${lastResult.points} pts!` : 'Not quite — try again!'}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ── LeaderboardOverlay ────────────────────────────────────────────────────────
+
+function LeaderboardOverlay({ leaderboard }: { leaderboard: LeaderboardEntry[] }) {
+  return (
+    <div style={{ textAlign: 'center', padding: 24 }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>🏆 Final Scores</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 320, margin: '0 auto' }}>
+        {leaderboard.map((entry, i) => (
+          <div key={entry.userId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: i === 0 ? 'rgba(229,160,13,0.2)' : 'rgba(255,255,255,0.06)', borderRadius: 10 }}>
+            <span style={{ fontWeight: i < 3 ? 700 : 400 }}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {entry.displayName}
+            </span>
+            <span style={{ fontWeight: 600, color: '#e5a00d' }}>{entry.total} pts</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Power Hour banner ─────────────────────────────────────────────────────────
 
 function PowerHourBanner({ powerHour }: { powerHour: PowerHourSnapshot }) {
@@ -1404,6 +1537,8 @@ export default function BroadcastPage() {
     try { return sessionStorage.getItem('ftAppBannerDismissed') === '1' } catch { return false }
   })
   const [drinkFlashing, setDrinkFlashing] = useState(false)
+  const [guessResult, setGuessResult] = useState<{ correct: boolean; field: string; points: number } | null>(null)
+  const guessResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [myUserId] = useState<string>(() => {
     try {
@@ -1552,6 +1687,33 @@ export default function BroadcastPage() {
           setDrinkFlashing(true)
           drinkTimeoutRef.current = setTimeout(() => setDrinkFlashing(false), 2000)
         }
+        if (payload.type === 'guess-result') {
+          if (payload.correct) {
+            setSession(prev => {
+              if (!prev?.currentTrack || !prev.powerHour) return prev
+              return {
+                ...prev,
+                currentTrack: {
+                  ...prev.currentTrack,
+                  [payload.field]: payload.revealed,
+                },
+                powerHour: {
+                  ...prev.powerHour,
+                  revealedFields: {
+                    ...prev.powerHour.revealedFields,
+                    [payload.field]: true,
+                  },
+                },
+              }
+            })
+          }
+          // Show result feedback only for this user
+          if (payload.userId === myUserId) {
+            if (guessResultTimeoutRef.current) clearTimeout(guessResultTimeoutRef.current)
+            setGuessResult({ correct: payload.correct, field: payload.field, points: payload.points })
+            guessResultTimeoutRef.current = setTimeout(() => setGuessResult(null), 3000)
+          }
+        }
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
@@ -1574,6 +1736,7 @@ export default function BroadcastPage() {
       channelRef.current = null
       ch.unsubscribe()
       if (drinkTimeoutRef.current) clearTimeout(drinkTimeoutRef.current)
+      if (guessResultTimeoutRef.current) clearTimeout(guessResultTimeoutRef.current)
     }
   }, [code, joined, myUserId, myDisplayName])
 
@@ -1810,6 +1973,10 @@ export default function BroadcastPage() {
     safeSend({ type: 'browse-playlist', playlistRatingKey: playlist.ratingKey, requestId, userId: myUserId })
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
   }, [myUserId, safeSend])
+
+  const handleGuess = useCallback((field: 'title' | 'artist' | 'album', value: string) => {
+    safeSend({ type: 'guess', field, value, userId: myUserId, displayName: myDisplayName })
+  }, [myUserId, myDisplayName, safeSend])
 
   const dismissBanner = () => {
     setBannerDismissed(true)
@@ -2130,9 +2297,20 @@ export default function BroadcastPage() {
 
           {/* ── Track info + vote ──────────────────────────────────────────── */}
           <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
-            {session.powerHour?.completed && <PowerHourComplete powerHour={session.powerHour} />}
+            {session.powerHour?.completed && session.powerHour?.guessingEnabled && (session.powerHour?.leaderboard?.length ?? 0) > 0 ? (
+              <LeaderboardOverlay leaderboard={session.powerHour.leaderboard} />
+            ) : session.powerHour?.completed ? (
+              <PowerHourComplete powerHour={session.powerHour} />
+            ) : null}
             {session.powerHour?.active && !session.powerHour.completed && (
               <PowerHourBanner powerHour={session.powerHour} />
+            )}
+            {session.powerHour?.active && !session.powerHour.completed && session.powerHour?.guessingEnabled && (
+              <GuessPanel
+                powerHour={session.powerHour}
+                lastResult={guessResult}
+                onGuess={handleGuess}
+              />
             )}
             {currentTrack ? (
               <>
@@ -2141,14 +2319,28 @@ export default function BroadcastPage() {
                   color: TEXT_PRIMARY,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
-                  {currentTrack.title}
+                  <BlurText
+                    text={currentTrack.title}
+                    blurred={!!(session.powerHour?.guessingEnabled && currentTrack.title === '')}
+                  />
                 </h1>
                 <p style={{
                   fontSize: 14, color: TEXT_SECONDARY, marginBottom: 2,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
-                  {currentTrack.artist}
-                  {currentTrack.album ? <span style={{ color: TEXT_MUTED }}> · {currentTrack.album}</span> : null}
+                  <BlurText
+                    text={currentTrack.artist}
+                    blurred={!!(session.powerHour?.guessingEnabled && currentTrack.artist === '')}
+                  />
+                  {currentTrack.album ? (
+                    <span style={{ color: TEXT_MUTED }}>
+                      {' · '}
+                      <BlurText
+                        text={currentTrack.album}
+                        blurred={!!(session.powerHour?.guessingEnabled && currentTrack.album === '')}
+                      />
+                    </span>
+                  ) : null}
                 </p>
               </>
             ) : (

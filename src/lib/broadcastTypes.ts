@@ -13,6 +13,12 @@ export interface BroadcastTrack {
 export type BroadcastPlayState = 'playing' | 'paused' | 'stopped'
 export type BroadcastSource    = 'sonos' | 'local' | 'airplay'
 
+export interface LeaderboardEntry {
+  userId: string
+  displayName: string
+  total: number
+}
+
 export interface PowerHourSnapshot {
   active: boolean
   songNumber: number
@@ -23,6 +29,9 @@ export interface PowerHourSnapshot {
   completed: boolean
   sourceName: string | null
   broadcastAt: number  // timestamp (ms) when snapshot was sent — for local countdown interpolation
+  guessingEnabled:  boolean
+  revealedFields:   { title: boolean; artist: boolean; album: boolean }
+  leaderboard:      LeaderboardEntry[]
 }
 
 export interface BroadcastSession {
@@ -84,3 +93,5 @@ export type BroadcastCommand =
   | { type: 'host-meta';        accentColor: string }
   | { type: 'broadcast-ended' }
   | { type: 'power-hour-drink'; songNumber: number }
+  | { type: 'guess'; field: 'title' | 'artist' | 'album'; value: string; userId: string; displayName: string }
+  | { type: 'guess-result'; field: 'title' | 'artist' | 'album'; correct: boolean; userId: string; displayName: string; points: number; revealed: string }
