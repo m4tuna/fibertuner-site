@@ -92,6 +92,6 @@ export type BroadcastCommand =
   | { type: 'browse-results';   requestId: string; kind: 'albums' | 'tracks'; albums: BroadcastAlbum[]; tracks: BroadcastTrack[] }
   | { type: 'host-meta';        accentColor: string }
   | { type: 'broadcast-ended' }
-  | { type: 'power-hour-drink'; songNumber: number }
+  | { type: 'power-hour-drink'; songNumber: number; revealTrack?: { title: string; artist: string; album: string; artUrl: string } }
   | { type: 'guess'; field: 'title' | 'artist' | 'album'; value: string; userId: string; displayName: string }
   | { type: 'guess-result'; field: 'title' | 'artist' | 'album'; correct: boolean; userId: string; displayName: string; points: number; revealed: string }
