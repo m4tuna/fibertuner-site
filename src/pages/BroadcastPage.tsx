@@ -1451,14 +1451,16 @@ export default function BroadcastPage() {
 
     async function fetchSession(attempt: number): Promise<void> {
       if (cancelled) return
-      const { data, error: err } = await supabase
+      const { data: rows, error: err } = await supabase
         .from('broadcast_sessions')
         .select('*')
         .eq('code', code)
-        .single()
+        .order('updated_at', { ascending: false })
+        .limit(1)
 
       if (cancelled) return
 
+      const data = rows?.[0] ?? null
       if (err || !data) {
         if (attempt < MAX_ATTEMPTS) {
           // Row not found yet — wait and retry
@@ -1533,8 +1535,10 @@ export default function BroadcastPage() {
             .from('broadcast_sessions')
             .select('*')
             .eq('code', code)
-            .single()
-            .then(({ data }) => {
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .then(({ data: rows }) => {
+              const data = rows?.[0] ?? null
               if (!data || isSessionEnded(rowToSession(data as Record<string, unknown>))) {
                 setSession(prev =>
                   prev ? { ...prev, state: 'stopped', expiresAt: new Date(0).toISOString() } : prev
