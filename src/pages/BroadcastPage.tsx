@@ -1537,6 +1537,7 @@ export default function BroadcastPage() {
     try { return sessionStorage.getItem('ftAppBannerDismissed') === '1' } catch { return false }
   })
   const [drinkFlashing, setDrinkFlashing] = useState(false)
+  const [drinkRevealTrack, setDrinkRevealTrack] = useState<BroadcastTrack | null>(null)
   const [guessResult, setGuessResult] = useState<{ correct: boolean; field: string; points: number } | null>(null)
   const guessResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1566,6 +1567,8 @@ export default function BroadcastPage() {
   const lastSearchQueryRef = useRef<string>('')
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const drinkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Keep a ref to guessingEnabled so the broadcast handler (stale closure) can read the current value
+  const guessingEnabledRef = useRef<boolean>(false)
 
   // Fetch initial session row — with retry.
   // The host writes a placeholder row to Supabase immediately after generating
@@ -1631,6 +1634,11 @@ export default function BroadcastPage() {
     setArtUrl(url || null)
   }, [session?.currentTrack?.title, session?.currentTrack?.artUrl])
 
+  // Keep guessingEnabledRef in sync so the broadcast handler (stale closure) reads the latest value
+  useEffect(() => {
+    guessingEnabledRef.current = !!(session?.powerHour?.guessingEnabled)
+  }, [session?.powerHour?.guessingEnabled])
+
   // Presence + broadcast channel — only set channelRef.current AFTER SUBSCRIBED.
   // This prevents send() calls from being silently dropped on a not-yet-ready channel.
   useEffect(() => {
@@ -1685,7 +1693,22 @@ export default function BroadcastPage() {
         if (payload.type === 'power-hour-drink') {
           if (drinkTimeoutRef.current) clearTimeout(drinkTimeoutRef.current)
           setDrinkFlashing(true)
-          drinkTimeoutRef.current = setTimeout(() => setDrinkFlashing(false), 2000)
+          // In guessing mode capture the current track for the reveal moment
+          const isGuessing = guessingEnabledRef.current
+          if (isGuessing) {
+            setSession(prev => {
+              setDrinkRevealTrack(prev?.currentTrack ?? null)
+              return prev
+            })
+          } else {
+            setDrinkRevealTrack(null)
+          }
+          const baseDuration = 2000
+          const guessingBonus = isGuessing ? 1000 : 0
+          drinkTimeoutRef.current = setTimeout(() => {
+            setDrinkFlashing(false)
+            setDrinkRevealTrack(null)
+          }, baseDuration + guessingBonus)
         }
         if (payload.type === 'guess-result') {
           if (payload.correct) {
@@ -2059,6 +2082,7 @@ export default function BroadcastPage() {
   // Current and upcoming tracks
   const currentTrack = session.currentTrack
   const upcomingQueue = session.queue.slice(session.currentIndex + 1)
+  const pastQueue = session.queue.slice(0, session.currentIndex)
 
   const displayArt = artUrl || currentTrack?.artUrl
 
@@ -2091,13 +2115,40 @@ export default function BroadcastPage() {
           inset: 0,
           background: 'rgba(245, 158, 11, 0.75)',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          gap: 20,
           zIndex: 9999,
-          animation: 'powerHourDrink 2s ease-out forwards',
+          animation: `powerHourDrink ${drinkRevealTrack ? '3s' : '2s'} ease-out forwards`,
           pointerEvents: 'none',
         }}>
           <div style={{ fontSize: 72, fontWeight: 900, color: '#fff', letterSpacing: 4 }}>DRINK! 🍺</div>
+          {drinkRevealTrack && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: 'rgba(0,0,0,0.35)', borderRadius: 14,
+              padding: '10px 16px',
+              maxWidth: 320, width: '90%',
+            }}>
+              {drinkRevealTrack.artUrl && (
+                <img
+                  src={drinkRevealTrack.artUrl}
+                  alt=""
+                  style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                />
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {drinkRevealTrack.title}
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
+                  {drinkRevealTrack.artist}
+                  {drinkRevealTrack.album ? ` · ${drinkRevealTrack.album}` : ''}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2273,6 +2324,12 @@ export default function BroadcastPage() {
           </header>
 
           {/* ── Album art ──────────────────────────────────────────────────── */}
+          {(() => {
+            const guessingActive = !!(session.powerHour?.guessingEnabled && session.powerHour?.active && !session.powerHour?.completed)
+            const revealedFields = session.powerHour?.revealedFields ?? { title: false, artist: false, album: false }
+            const allRevealed = revealedFields.title && revealedFields.artist && revealedFields.album
+            const artBlurred = guessingActive && !allRevealed
+            return (
           <div style={{ padding: '8px 24px 0', flexShrink: 0 }}>
             <div style={{
               width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
@@ -2281,7 +2338,7 @@ export default function BroadcastPage() {
             }}>
               {displayArt ? (
                 <img src={displayArt} alt={currentTrack?.album ?? ''}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: artBlurred ? 'blur(12px)' : 'none', transition: 'filter 0.4s ease' }} />
               ) : (
                 <div style={{
                   width: '100%', height: '100%',
@@ -2294,6 +2351,8 @@ export default function BroadcastPage() {
               )}
             </div>
           </div>
+            )
+          })()}
 
           {/* ── Track info + vote ──────────────────────────────────────────── */}
           <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
@@ -2387,7 +2446,35 @@ export default function BroadcastPage() {
           </div>
 
           {/* ── Queue ─────────────────────────────────────────────────────── */}
+          {(() => {
+            const guessingActive = !!(session.powerHour?.guessingEnabled && session.powerHour?.active && !session.powerHour?.completed)
+            const sessionCompleted = !!(session.powerHour?.completed)
+
+            return (
           <div style={{ flex: 1, padding: '16px 20px', paddingBottom: bannerDismissed ? 'max(32px, env(safe-area-inset-bottom, 0px))' : 'max(100px, calc(env(safe-area-inset-bottom, 0px) + 80px))' }}>
+
+            {/* Past songs — always shown with full metadata */}
+            {pastQueue.length > 0 && (
+              <>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, color: TEXT_MUTED,
+                  letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
+                }}>
+                  Previously Played
+                </div>
+                {pastQueue.map((track, i) => (
+                  <QueueRow
+                    key={`past-${track.uri}-${i}`}
+                    track={track}
+                    isCurrentTrack={false}
+                    myUserId={myUserId}
+                    onVote={handleVote}
+                  />
+                ))}
+                <div style={{ height: 16 }} />
+              </>
+            )}
+
             <div style={{
               fontSize: 10, fontWeight: 700, color: TEXT_MUTED,
               letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
@@ -2412,6 +2499,26 @@ export default function BroadcastPage() {
                   search for tracks
                 </button>{' '}to add!
               </div>
+            ) : guessingActive ? (
+              /* Guessing mode: upcoming songs are hidden — show placeholder rows */
+              upcomingQueue.map((track, i) => (
+                <div
+                  key={`${track.uri}-${session.currentIndex + 1 + i}`}
+                  style={{
+                    height: 64, display: 'flex', alignItems: 'center', gap: 12,
+                    borderBottom: `1px solid ${BORDER}`,
+                    borderLeft: '2px solid transparent',
+                  }}
+                >
+                  {/* Blurred art placeholder */}
+                  <div style={{ width: 44, height: 44, borderRadius: 6, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
+                  {/* Hidden track info */}
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ height: 10, borderRadius: 4, background: 'rgba(255,255,255,0.1)', width: '60%' }} />
+                    <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', width: '40%' }} />
+                  </div>
+                </div>
+              ))
             ) : (
               upcomingQueue.map((track, i) => (
                 <QueueRow
@@ -2424,7 +2531,16 @@ export default function BroadcastPage() {
                 />
               ))
             )}
+
+            {/* After session ends in guessing mode, reveal what was hidden */}
+            {sessionCompleted && session.powerHour?.guessingEnabled && upcomingQueue.length > 0 && (
+              <p style={{ fontSize: 12, color: TEXT_MUTED, textAlign: 'center', marginTop: 8 }}>
+                Session complete — all songs revealed above
+              </p>
+            )}
           </div>
+            )
+          })()}
         </div>
       </div>
     </>
