@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { FaThumbsUp, FaThumbsDown, FaShareAlt, FaTrash } from 'react-icons/fa'
+import { FaThumbsUp, FaThumbsDown, FaShareAlt, FaTrash, FaPen } from 'react-icons/fa'
 import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '../lib/supabase'
 import type {
@@ -1551,6 +1551,8 @@ export default function BroadcastPage() {
     } catch { return randomUserId() }
   })
   const [myDisplayName, setMyDisplayName] = useState<string>(() => getSavedName() || '')
+  const [editingGuestName, setEditingGuestName] = useState(false)
+  const [guestNameDraft, setGuestNameDraft] = useState('')
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   // Track whether the channel is in SUBSCRIBED state — send() silently drops
@@ -2309,32 +2311,90 @@ export default function BroadcastPage() {
                 {session.name || session.hostName}
               </span>
             </div>
-            <button
-              onClick={() => setShowShareModal(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.15em',
-                color: TEXT_MUTED, background: SURFACE,
-                padding: '3px 8px 3px 7px', borderRadius: 6, flexShrink: 0,
-                border: `1px solid transparent`,
-                cursor: 'pointer',
-                transition: 'border-color 0.15s, opacity 0.15s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)'
-                ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.8'
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'
-                ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
-              }}
-              onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.5' }}
-              onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
-              aria-label="Share broadcast"
-            >
-              <FaShareAlt style={{ fontSize: 9, opacity: 0.7 }} />
-              {code}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {/* Inline editable guest name */}
+              {editingGuestName ? (
+                <input
+                  autoFocus
+                  value={guestNameDraft}
+                  onChange={e => setGuestNameDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const trimmed = guestNameDraft.trim()
+                      if (trimmed) {
+                        try { localStorage.setItem('broadcastDisplayName', trimmed) } catch {}
+                        setMyDisplayName(trimmed)
+                      }
+                      setEditingGuestName(false)
+                    } else if (e.key === 'Escape') {
+                      setEditingGuestName(false)
+                    }
+                  }}
+                  onBlur={() => {
+                    const trimmed = guestNameDraft.trim()
+                    if (trimmed) {
+                      try { localStorage.setItem('broadcastDisplayName', trimmed) } catch {}
+                      setMyDisplayName(trimmed)
+                    }
+                    setEditingGuestName(false)
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(255,255,255,0.25)',
+                    outline: 'none',
+                    color: TEXT_SECONDARY,
+                    fontSize: 12,
+                    fontFamily: FONT,
+                    width: 90,
+                    padding: '1px 2px',
+                  }}
+                />
+              ) : (
+                <button
+                  onClick={() => { setGuestNameDraft(myDisplayName); setEditingGuestName(true) }}
+                  title="Edit your name"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                    color: TEXT_MUTED, fontSize: 12, fontFamily: FONT,
+                    maxWidth: 120, overflow: 'hidden',
+                  }}
+                >
+                  <span style={{
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    color: TEXT_SECONDARY,
+                  }}>{myDisplayName}</span>
+                  <FaPen style={{ fontSize: 8, opacity: 0.45, flexShrink: 0 }} />
+                </button>
+              )}
+              <button
+                onClick={() => setShowShareModal(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.15em',
+                  color: TEXT_MUTED, background: SURFACE,
+                  padding: '3px 8px 3px 7px', borderRadius: 6, flexShrink: 0,
+                  border: `1px solid transparent`,
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s, opacity 0.15s',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)'
+                  ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.8'
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'
+                  ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
+                }}
+                onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.5' }}
+                onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.8' }}
+                aria-label="Share broadcast"
+              >
+                <FaShareAlt style={{ fontSize: 9, opacity: 0.7 }} />
+                {code}
+              </button>
+            </div>
           </header>
 
           {/* ── Album art ──────────────────────────────────────────────────── */}
