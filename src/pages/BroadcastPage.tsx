@@ -1714,27 +1714,56 @@ export default function BroadcastPage() {
           setDrinkFlashing(true)
           setIsTransitioning(true)
           setGuessResult(null)
-          // In guessing mode, build the reveal track showing real values for
-          // fields the guests already guessed, and '???' for still-hidden fields.
-          // The host redacts unrevealed fields to '' in currentTrack; revealed
-          // fields were restored by guess-result handlers, so their values are real.
           const isGuessing = guessingEnabledRef.current
           if (isGuessing) {
-            setSession(prev => {
-              const track = prev?.currentTrack
-              const revealedFields = prev?.powerHour?.revealedFields ?? { title: false, artist: false, album: false }
-              if (track) {
-                setDrinkRevealTrack({
-                  ...track,
-                  title:  revealedFields.title  ? track.title  : '???',
-                  artist: revealedFields.artist ? track.artist : '???',
-                  album:  revealedFields.album  ? track.album  : '???',
-                })
-              } else {
-                setDrinkRevealTrack(null)
-              }
-              return prev
-            })
+            // Prefer revealTrack from host (full unredacted info — the reveal moment).
+            // Fall back to building from currentTrack with '???' for unrevealed fields
+            // for backward compat with older desktop versions that don't send revealTrack.
+            if (payload.revealTrack &&
+                (payload.revealTrack.title || payload.revealTrack.artist || payload.revealTrack.album)) {
+              setSession(prev => {
+                const track = prev?.currentTrack
+                if (track) {
+                  setDrinkRevealTrack({
+                    ...track,
+                    title:  payload.revealTrack!.title,
+                    artist: payload.revealTrack!.artist,
+                    album:  payload.revealTrack!.album,
+                    artUrl: payload.revealTrack!.artUrl || track.artUrl,
+                  })
+                } else {
+                  setDrinkRevealTrack({
+                    title:  payload.revealTrack!.title,
+                    artist: payload.revealTrack!.artist,
+                    album:  payload.revealTrack!.album,
+                    artUrl: payload.revealTrack!.artUrl,
+                    durationMs: 0,
+                    uri: '',
+                    addedBy: null,
+                    votes: { up: 0, down: [] },
+                  })
+                }
+                return prev
+              })
+            } else {
+              // Legacy fallback: build reveal from currentTrack, using '???' for
+              // fields the host redacted (empty string) and still-unrevealed.
+              setSession(prev => {
+                const track = prev?.currentTrack
+                const revealedFields = prev?.powerHour?.revealedFields ?? { title: false, artist: false, album: false }
+                if (track) {
+                  setDrinkRevealTrack({
+                    ...track,
+                    title:  revealedFields.title  ? track.title  : '???',
+                    artist: revealedFields.artist ? track.artist : '???',
+                    album:  revealedFields.album  ? track.album  : '???',
+                  })
+                } else {
+                  setDrinkRevealTrack(null)
+                }
+                return prev
+              })
+            }
           } else {
             setDrinkRevealTrack(null)
           }
