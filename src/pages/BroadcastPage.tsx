@@ -1217,10 +1217,12 @@ function GuessPanel({
   powerHour,
   lastResult,
   onGuess,
+  isTransitioning,
 }: {
   powerHour: PowerHourSnapshot
   lastResult: { correct: boolean; field: string; points: number } | null
   onGuess: (field: 'title' | 'artist' | 'album', value: string) => void
+  isTransitioning: boolean
 }) {
   const [field, setField] = useState<'title' | 'artist' | 'album'>('title')
   const [input, setInput] = useState('')
@@ -1237,7 +1239,7 @@ function GuessPanel({
   }, [revealedFields, field])
 
   const handleSubmit = () => {
-    if (!input.trim()) return
+    if (!input.trim() || isTransitioning) return
     onGuess(field, input.trim())
     setInput('')
   }
@@ -1251,21 +1253,22 @@ function GuessPanel({
   if (allRevealed) return <p style={{ textAlign: 'center', opacity: 0.5, fontSize: 13, marginBottom: 12 }}>All fields revealed!</p>
 
   return (
-    <div style={{ padding: '12px', background: 'rgba(255,255,255,0.06)', borderRadius: 12, marginBottom: 12 }}>
+    <div style={{ padding: '12px', background: 'rgba(255,255,255,0.06)', borderRadius: 12, marginBottom: 12, opacity: isTransitioning ? 0.5 : 1, transition: 'opacity 0.2s' }}>
       {/* Field selector */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
         {fields.map(f => {
           const isRevealed = revealedFields[f.key]
+          const isDisabled = isRevealed || isTransitioning
           return (
             <button
               key={f.key}
-              disabled={isRevealed}
+              disabled={isDisabled}
               onClick={() => setField(f.key)}
               style={{
                 flex: 1, padding: '6px 0', borderRadius: 8, border: 'none',
                 background: field === f.key && !isRevealed ? '#e5a00d' : 'rgba(255,255,255,0.1)',
                 color: isRevealed ? 'rgba(255,255,255,0.3)' : '#fff',
-                cursor: isRevealed ? 'default' : 'pointer',
+                cursor: isDisabled ? 'default' : 'pointer',
                 fontSize: 13, fontWeight: field === f.key && !isRevealed ? 600 : 400,
                 textDecoration: isRevealed ? 'line-through' : 'none',
                 fontFamily: FONT,
@@ -1284,18 +1287,22 @@ function GuessPanel({
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-          placeholder={`Guess the ${field}...`}
+          disabled={isTransitioning}
+          placeholder={isTransitioning ? 'Next song starting...' : `Guess the ${field}...`}
           style={{
             flex: 1, padding: '8px 12px', borderRadius: 8,
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
             color: '#fff', fontSize: 14, outline: 'none', fontFamily: FONT,
+            cursor: isTransitioning ? 'default' : 'text',
           }}
         />
         <button
           onClick={handleSubmit}
+          disabled={isTransitioning}
           style={{
             padding: '8px 16px', borderRadius: 8, border: 'none',
-            background: '#e5a00d', color: '#000', fontWeight: 600, cursor: 'pointer',
+            background: '#e5a00d', color: '#000', fontWeight: 600,
+            cursor: isTransitioning ? 'default' : 'pointer',
             fontFamily: FONT,
           }}
         >
@@ -1304,7 +1311,7 @@ function GuessPanel({
       </div>
 
       {/* Last result feedback */}
-      {lastResult && (
+      {lastResult && !isTransitioning && (
         <p style={{ marginTop: 8, fontSize: 13, color: lastResult.correct ? '#4ade80' : '#f87171', textAlign: 'center', margin: '8px 0 0' }}>
           {lastResult.correct ? `+${lastResult.points} pts!` : 'Not quite — try again!'}
         </p>
@@ -1547,6 +1554,7 @@ export default function BroadcastPage() {
   })
   const [drinkFlashing, setDrinkFlashing] = useState(false)
   const [drinkRevealTrack, setDrinkRevealTrack] = useState<BroadcastTrack | null>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const [guessResult, setGuessResult] = useState<{ correct: boolean; field: string; points: number } | null>(null)
   const guessResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1704,6 +1712,8 @@ export default function BroadcastPage() {
         if (payload.type === 'power-hour-drink') {
           if (drinkTimeoutRef.current) clearTimeout(drinkTimeoutRef.current)
           setDrinkFlashing(true)
+          setIsTransitioning(true)
+          setGuessResult(null)
           // In guessing mode, build the reveal track showing real values for
           // fields the guests already guessed, and '???' for still-hidden fields.
           // The host redacts unrevealed fields to '' in currentTrack; revealed
@@ -1733,6 +1743,7 @@ export default function BroadcastPage() {
           drinkTimeoutRef.current = setTimeout(() => {
             setDrinkFlashing(false)
             setDrinkRevealTrack(null)
+            setIsTransitioning(false)
           }, baseDuration + guessingBonus)
         }
         if (payload.type === 'guess-result') {
@@ -2456,9 +2467,11 @@ export default function BroadcastPage() {
             )}
             {session.powerHour?.active && !session.powerHour.completed && session.powerHour?.guessingEnabled && (
               <GuessPanel
+                key={session.powerHour?.songNumber ?? 0}
                 powerHour={session.powerHour}
                 lastResult={guessResult}
                 onGuess={handleGuess}
+                isTransitioning={isTransitioning}
               />
             )}
             {currentTrack ? (
