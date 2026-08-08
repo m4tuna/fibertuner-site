@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.33.0] - 2026-08-08
+
+## What's Changed
+* ui: nav restructure — actions menu, user menu, sidebar cleanup by @m4tuna in https://github.com/m4tuna/fibertuner/pull/113
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.32.0...v2.33.0
+
 ## [2.32.0] - 2026-08-08
 
 ## What's Changed
