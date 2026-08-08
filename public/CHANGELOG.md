@@ -2,6 +2,15 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.32.0] - 2026-08-08
+
+## What's Changed
+* feat: Discord Rich Presence — broadcast now playing to Discord by @m4tuna in https://github.com/m4tuna/fibertuner/pull/109
+* feat: schedule playback of specific content (playlist, album, artist, track) by @m4tuna in https://github.com/m4tuna/fibertuner/pull/110
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.31.2...v2.32.0
+
 ## [2.31.2] - 2026-08-06
 
 ## What's Changed
