@@ -2,6 +2,15 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.34.0] - 2026-08-10
+
+## What's Changed
+* feat: line-in turntable detection + vinyl UI in Now Playing by @m4tuna in https://github.com/m4tuna/fibertuner/pull/114
+* chore: remove TV debug console.log statements [URGENT] by @m4tuna in https://github.com/m4tuna/fibertuner/pull/125
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.33.0...v2.34.0
+
 ## [2.33.0] - 2026-08-08
 
 ## What's Changed
