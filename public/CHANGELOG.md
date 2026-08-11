@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.35.0] - 2026-08-11
+
+## What's Changed
+* feat: Plex Now Watching, TV player controls, portrait layout, vinyl UI polish by @m4tuna in https://github.com/m4tuna/fibertuner/pull/127
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.34.1...v2.35.0
+
 ## [2.34.1] - 2026-08-11
 
 ## What's Changed
