@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.34.1] - 2026-08-11
+
+## What's Changed
+* fix: suppress duplicate notifications on startup by @m4tuna in https://github.com/m4tuna/fibertuner/pull/128
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.34.0...v2.34.1
+
 ## [2.34.0] - 2026-08-10
 
 ## What's Changed
