@@ -4,43 +4,42 @@ All notable changes to Fibertuner are documented here.
 
 ## [2.35.0] - 2026-08-11
 
-## What's Changed
-* feat: Plex Now Watching, TV player controls, portrait layout, vinyl UI polish by @m4tuna in https://github.com/m4tuna/fibertuner/pull/127
-
+### What's Changed
+- **TV source UI** — Now Playing switches to show what's playing on Plex when TV/soundbar mode is active, with episode metadata, artwork, and soundbar controls (#127)
+- **Suppress duplicate startup notifications** — reduced noisy triple notification on launch to a single clean notification with a 5s grace window (#128)
+- **Line-in / vinyl UI** — turntable detection with vinyl animation in Now Playing and dedicated drawer view (#114)
+- **Nav restructure** — new Plus menu (Create Playlist, Start Broadcast, Feedback), User menu (Settings, Friends, Sign out), sidebar polish (#113)
 
 **Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.34.1...v2.35.0
 
 ## [2.34.1] - 2026-08-11
 
-## What's Changed
-* fix: suppress duplicate notifications on startup by @m4tuna in https://github.com/m4tuna/fibertuner/pull/128
-
+### What's Changed
+- fix: suppress duplicate startup notifications with 5s grace window (#128)
 
 **Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.34.0...v2.34.1
 
 ## [2.34.0] - 2026-08-10
 
-## What's Changed
-* feat: line-in turntable detection + vinyl UI in Now Playing by @m4tuna in https://github.com/m4tuna/fibertuner/pull/114
-* chore: remove TV debug console.log statements [URGENT] by @m4tuna in https://github.com/m4tuna/fibertuner/pull/125
-
+### What's Changed
+- feat: TV source UI — Plex now-watching, TV fullscreen, soundbar controls (#127)
 
 **Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.33.0...v2.34.0
 
 ## [2.33.0] - 2026-08-08
 
-## What's Changed
-* ui: nav restructure — actions menu, user menu, sidebar cleanup by @m4tuna in https://github.com/m4tuna/fibertuner/pull/113
-
+### What's Changed
+- **Discord Rich Presence** — broadcast now playing to Discord (#109)
+- **Schedule specific content** — play a specific playlist, album, artist, or track on a schedule (#110)
+- **Nav restructure** — actions menu, user menu, sidebar, feedback modal (#113)
 
 **Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.32.0...v2.33.0
 
 ## [2.32.0] - 2026-08-08
 
-## What's Changed
-* feat: Discord Rich Presence — broadcast now playing to Discord by @m4tuna in https://github.com/m4tuna/fibertuner/pull/109
-* feat: schedule playback of specific content (playlist, album, artist, track) by @m4tuna in https://github.com/m4tuna/fibertuner/pull/110
-
+### What's Changed
+- feat: Discord Rich Presence — broadcast now playing to Discord (#109)
+- feat: schedule playback of specific content (playlist, album, artist, track) (#110)
 
 **Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.31.2...v2.32.0
 
