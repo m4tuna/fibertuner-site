@@ -2,6 +2,15 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.37.0] - 2026-08-15
+
+## What's Changed
+* feat: Plex reporting + TV auto-pause + vinyl auto-volume [RC] by @m4tuna in https://github.com/m4tuna/fibertuner/pull/135
+* rc: playback external fixes — continuous playback threshold + external vote buttons by @m4tuna in https://github.com/m4tuna/fibertuner/pull/139
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.35.0...v2.37.0
+
 ## [2.35.0] - 2026-08-11
 
 ### What's Changed
