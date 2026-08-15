@@ -493,3 +493,110 @@
   .iphone-section__inner { flex-direction: column; gap: 40px; padding: 72px 20px 0; }
   .iphone-section__mockup { width: 200px; }
 }
+
+/* ── Hero trial note ─────────────────────────────────────── */
+.hero__trial-note {
+  font-size: 12px;
+  color: rgba(255,255,255,0.32);
+  letter-spacing: 0.01em;
+}
+
+/* ── Comparison table ────────────────────────────────────── */
+.compare__inner {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 104px 40px 0;
+}
+
+.compare__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 16px;
+}
+
+.compare__title {
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.6px;
+  line-height: 1.1;
+  margin-bottom: 40px;
+}
+
+.compare__table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compare__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.compare__th {
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.compare__th--feature { text-align: left; width: 46%; }
+
+.compare__th--ft {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-radius: 6px 6px 0 0;
+}
+
+.compare__row { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.compare__row:last-child { border-bottom: none; }
+
+.compare__td {
+  padding: 11px 16px;
+  text-align: center;
+  color: rgba(255,255,255,0.45);
+}
+
+.compare__td--label {
+  text-align: left;
+  color: rgba(255,255,255,0.65);
+  font-weight: 400;
+}
+
+.compare__td--ft {
+  color: var(--accent);
+  font-weight: 500;
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.compare__row--price .compare__td {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.compare__row--price .compare__td--label { color: rgba(255,255,255,0.7); }
+.compare__row--price .compare__td--ft { color: var(--accent); }
+
+/* ── Pricing social proof ────────────────────────────────── */
+.pricing__social-proof {
+  font-size: 13px;
+  color: rgba(255,255,255,0.28);
+  margin-top: -8px;
+  margin-bottom: 40px;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 640px) {
+  .compare__inner { padding: 72px 20px 0; }
+  .compare__th, .compare__td { padding: 10px 10px; }
+}
