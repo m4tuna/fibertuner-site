@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.37.1] - 2026-08-15
+
+## What's Changed
+* fix: resolve track metadata by title+artist to prevent wrong artist match by @m4tuna in https://github.com/m4tuna/fibertuner/pull/140
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.37.0...v2.37.1
+
 ## [2.37.0] - 2026-08-15
 
 ## What's Changed
