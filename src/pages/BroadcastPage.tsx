@@ -2463,10 +2463,9 @@ export default function BroadcastPage() {
                 <img src={displayArt} alt={currentTrack?.album ?? ''}
                   style={{
                     width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                    filter: artBlurred ? 'blur(20px)' : 'none',
-                    // Scale up slightly so the blur edges extend outside the
-                    // overflow:hidden container and don't clip on any side.
-                    transform: artBlurred ? 'scale(1.08)' : 'none',
+                    filter: artBlurred ? 'blur(40px) brightness(0.3)' : 'none',
+                    // Scale up so blur edges extend outside overflow:hidden and don't clip.
+                    transform: artBlurred ? 'scale(1.15)' : 'none',
                     transition: 'filter 0.4s ease, transform 0.4s ease',
                   }} />
               ) : (
