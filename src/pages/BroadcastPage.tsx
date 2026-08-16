@@ -1584,6 +1584,8 @@ export default function BroadcastPage() {
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSearchQueryRef = useRef<string>('')
+  const pendingSearchRequestIdsRef = useRef<Set<string>>(new Set())
+  const pendingBrowseRequestIdsRef = useRef<Set<string>>(new Set())
   const browseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const drinkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Keep a ref to guessingEnabled so the broadcast handler (stale closure) can read the current value
@@ -1674,7 +1676,9 @@ export default function BroadcastPage() {
       .on('broadcast', { event: 'command' }, ({ payload }: { payload: BroadcastCommand }) => {
         console.error('[broadcast] received command from host:', payload.type, payload)
         if (payload.type === 'search-results') {
+          if (!pendingSearchRequestIdsRef.current.has(payload.requestId)) return
           console.error('[broadcast] received search-results', payload)
+          pendingSearchRequestIdsRef.current.clear()
           setSearchResults(payload.results)
           setSearchArtists((payload as any).artists ?? [])
           setSearchAlbums((payload as any).albums ?? [])
@@ -1686,6 +1690,8 @@ export default function BroadcastPage() {
           if (searchRetryRef.current) clearTimeout(searchRetryRef.current)
         }
         if (payload.type === 'browse-results') {
+          if (!pendingBrowseRequestIdsRef.current.has(payload.requestId)) return
+          pendingBrowseRequestIdsRef.current.clear()
           setBrowseResults({ kind: payload.kind, albums: payload.albums, tracks: payload.tracks })
           setBrowsing(false)
           if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
@@ -1915,6 +1921,8 @@ export default function BroadcastPage() {
     setSearching(false)
     setBrowsing(false)
     lastSearchQueryRef.current = ''
+    pendingSearchRequestIdsRef.current.clear()
+    pendingBrowseRequestIdsRef.current.clear()
     if (searchRetryRef.current) clearTimeout(searchRetryRef.current)
   }, [])
 
@@ -2022,13 +2030,16 @@ export default function BroadcastPage() {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     if (searchRetryRef.current) clearTimeout(searchRetryRef.current)
     lastSearchQueryRef.current = query.trim()
+    pendingSearchRequestIdsRef.current.clear()
     const requestId = Math.random().toString(36).slice(2)
+    pendingSearchRequestIdsRef.current.add(requestId)
     console.error('[broadcast] sending search-request', { query: query.trim(), requestId }, 'channel subscribed:', channelSubscribedRef.current)
     safeSend({ type: 'search-request', query: query.trim(), requestId, userId: myUserId })
     // Retry once after 3s in case the host channel wasn't ready on the first attempt
     searchRetryRef.current = setTimeout(() => {
       if (lastSearchQueryRef.current === query.trim()) {
         const retryId = Math.random().toString(36).slice(2)
+        pendingSearchRequestIdsRef.current.add(retryId)
         safeSend({ type: 'search-request', query: query.trim(), requestId: retryId, userId: myUserId })
       }
     }, 3000)
@@ -2040,6 +2051,8 @@ export default function BroadcastPage() {
     setBrowseResults(null)
     if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
+    pendingBrowseRequestIdsRef.current.clear()
+    pendingBrowseRequestIdsRef.current.add(requestId)
     safeSend({ type: 'browse-artist', artistRatingKey: artist.ratingKey, requestId, userId: myUserId })
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
   }, [myUserId, safeSend])
@@ -2049,6 +2062,8 @@ export default function BroadcastPage() {
     setBrowseResults(null)
     if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
+    pendingBrowseRequestIdsRef.current.clear()
+    pendingBrowseRequestIdsRef.current.add(requestId)
     safeSend({ type: 'browse-album', albumRatingKey: album.ratingKey, requestId, userId: myUserId })
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
   }, [myUserId, safeSend])
@@ -2058,6 +2073,8 @@ export default function BroadcastPage() {
     setBrowseResults(null)
     if (browseTimeoutRef.current) clearTimeout(browseTimeoutRef.current)
     const requestId = Math.random().toString(36).slice(2)
+    pendingBrowseRequestIdsRef.current.clear()
+    pendingBrowseRequestIdsRef.current.add(requestId)
     safeSend({ type: 'browse-playlist', playlistRatingKey: playlist.ratingKey, requestId, userId: myUserId })
     browseTimeoutRef.current = setTimeout(() => setBrowsing(false), 10000)
   }, [myUserId, safeSend])
