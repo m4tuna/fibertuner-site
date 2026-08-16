@@ -23,10 +23,6 @@ const SECTIONS = [
     title: 'Data retention',
     body: `Because we collect no data, there is nothing to retain or delete.`,
   },
-  {
-    title: 'Contact',
-    body: `Questions? Email m4tuna@gmail.com.`,
-  },
 ]
 
 export default function MobilePrivacyPage() {
