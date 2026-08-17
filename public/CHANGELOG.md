@@ -2,6 +2,15 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.37.2] - 2026-08-17
+
+## What's Changed
+* fix: prevent short artist names from false-matching in radio by @m4tuna in https://github.com/m4tuna/fibertuner/pull/144
+* fix: address high-severity security audit findings by @m4tuna in https://github.com/m4tuna/fibertuner/pull/143
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.37.1...v2.37.2
+
 ## [2.37.1] - 2026-08-15
 
 ## What's Changed
