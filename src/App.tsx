@@ -105,7 +105,11 @@ export default function App() {
   return (
     <div>
       <header className="site-header">
-        <span className="site-header__logo">Fibertuner</span>
+        <a
+          href="/"
+          className="site-header__logo"
+          onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+        >Fibertuner</a>
         <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <a href="#pricing" className="site-header__link">Pricing</a>
           <a href="/changelog" className="site-header__link">Changelog</a>
