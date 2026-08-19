@@ -129,7 +129,8 @@ export default function App() {
             AI-powered features, and enough customization to make it feel like yours.
           </p>
           <div className="hero__ctas">
-            <a href="#pricing" className="hero__btn">Buy</a>
+            <a href="#pricing" className="hero__btn">Get Fibertuner</a>
+            <span className="hero__trial-note">Try free for 14 days — no credit card required</span>
             <a href="/downloads" className="hero__secondary-link">
               Already have a license? Download →
             </a>
@@ -210,6 +211,50 @@ export default function App() {
         </div>
       )}
 
+      {/* Comparison table */}
+      <div className="compare__inner">
+        <h2 className="compare__eyebrow">How it compares</h2>
+        <p className="compare__title">Built for Plex + Sonos together</p>
+        <div className="compare__table-wrap">
+          <table className="compare__table">
+            <thead>
+              <tr>
+                <th className="compare__th compare__th--feature"></th>
+                <th className="compare__th compare__th--ft">Fibertuner</th>
+                <th className="compare__th">Sonos App</th>
+                <th className="compare__th">Plexamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {([
+                ['Plex library browser',    true,  false, true],
+                ['Sonos multi-room control',true,  true,  false],
+                ['AI playlist wizard',      true,  false, false],
+                ['Offline downloads',       true,  false, true],
+                ['TV auto-pause',           true,  false, false],
+                ['Vinyl mode',              true,  false, false],
+                ['Menu bar tray app',       true,  false, false],
+                ['Artist radio',            true,  false, true],
+                ['macOS / Windows / Linux', true,  true,  true],
+              ] as [string, boolean, boolean, boolean][]).map(([label, ft, sonos, plexamp]) => (
+                <tr key={label} className="compare__row">
+                  <td className="compare__td compare__td--label">{label}</td>
+                  <td className="compare__td compare__td--ft">{ft ? '✓' : '—'}</td>
+                  <td className="compare__td">{sonos ? '✓' : '—'}</td>
+                  <td className="compare__td">{plexamp ? '✓' : '—'}</td>
+                </tr>
+              ))}
+              <tr className="compare__row compare__row--price">
+                <td className="compare__td compare__td--label">Price</td>
+                <td className="compare__td compare__td--ft">From $12/yr</td>
+                <td className="compare__td">Free</td>
+                <td className="compare__td">Free</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Pricing */}
       <div id="pricing" className="pricing">
         <div className="pricing__gradient" />
@@ -218,6 +263,9 @@ export default function App() {
           <p className="pricing__title">One app. Two ways to own it.</p>
           <p className="pricing__desc">
             Personal plans cover you on up to 3 machines. Server plans unlock Fibertuner for every user on your Plex server.
+          </p>
+          <p className="pricing__social-proof">
+            Trusted by Plex + Sonos households across 30+ countries.
           </p>
 
           <div className="pricing__tier">
