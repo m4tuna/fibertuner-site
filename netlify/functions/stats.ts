@@ -9,8 +9,8 @@ export default async (req: Request) => {
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!serviceRoleKey) {
-    console.error('[stats] SUPABASE_SERVICE_ROLE_KEY not set')
-    return json({ error: "server_error" }, 500)
+    console.error('[stats] SUPABASE_SERVICE_ROLE_KEY not set — add it to .env or Netlify environment variables')
+    return json({ error: "server_error", hint: "SUPABASE_SERVICE_ROLE_KEY env var not set" }, 500)
   }
 
   // Query profiles table using service role key — bypasses RLS entirely
