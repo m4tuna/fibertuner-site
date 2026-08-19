@@ -10,6 +10,7 @@ import BroadcastPage from './pages/BroadcastPage'
 import StatsPage from './pages/StatsPage'
 import DemoPage from './pages/DemoPage'
 import ChangelogPage from './pages/ChangelogPage'
+import BetaPage from './pages/BetaPage'
 
 const path   = window.location.pathname.replace(/\/$/, '') || '/'
 const search = new URLSearchParams(window.location.search)
@@ -22,6 +23,7 @@ const root =
   path === '/stats'                  ? <StatsPage /> :
   path === '/demo'                   ? <DemoPage /> :
   path === '/changelog'              ? <ChangelogPage /> :
+  path === '/beta'                   ? <BetaPage /> :
   path.startsWith('/broadcast')      ? <BroadcastPage /> :
   <App />
 
