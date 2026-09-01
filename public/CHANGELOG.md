@@ -2,6 +2,10 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.38.1] - 2026-09-01
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.38.0...v2.38.1
+
 ## [2.37.2] - 2026-08-17
 
 ## What's Changed
