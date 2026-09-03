@@ -21,12 +21,12 @@ export default async (req: Request) => {
   }
 
   // Query profiles table using service role key — bypasses RLS entirely.
-  // We filter only on server_machine_id (not server_owned) because profiles
-  // written by older app versions may have server_owned = null even for real
-  // server owners, which would cause eq.true to silently exclude them.
+  // Filter on server_owned=true so we always return the server owner's username,
+  // not a guest/member profile that shares the same server_machine_id.
   const query = new URLSearchParams({
     select: 'plex_username,server_name',
     server_machine_id: `eq.${machineId}`,
+    server_owned: 'eq.true',
     limit: '1',
   })
   const res = await fetch(
