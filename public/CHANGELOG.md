@@ -2,6 +2,16 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.38.3] - 2026-09-19
+
+## What's Changed
+* fix: remove TV Audio view from now playing UI by @m4tuna in https://github.com/m4tuna/fibertuner/pull/159
+* fix: remove stray brace in NowPlayingDrawer causing CI failure by @m4tuna in https://github.com/m4tuna/fibertuner/pull/160
+* chore: manual keychain setup for macOS code signing in CI by @m4tuna in https://github.com/m4tuna/fibertuner/pull/161
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.38.1...v2.38.3
+
 ## [2.38.1] - 2026-09-01
 
 **Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.38.0...v2.38.1
