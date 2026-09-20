@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.38.4] - 2026-09-20
+
+## What's Changed
+* fix: restore Now Playing UI broken by TV Audio removal by @m4tuna in https://github.com/m4tuna/fibertuner/pull/162
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.38.3...v2.38.4
+
 ## [2.38.3] - 2026-09-19
 
 ## What's Changed
