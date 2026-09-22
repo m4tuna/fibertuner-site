@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.38.5] - 2026-09-22
+
+## What's Changed
+* fix: remove TV Audio view state from Now Playing UI by @m4tuna in https://github.com/m4tuna/fibertuner/pull/163
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.38.4...v2.38.5
+
 ## [2.38.4] - 2026-09-20
 
 ## What's Changed
