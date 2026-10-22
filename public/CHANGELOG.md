@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.38.6] - 2026-10-22
+
+## What's Changed
+* fix: Plex connection + artist radio production resilience by @m4tuna in https://github.com/m4tuna/fibertuner/pull/171
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.38.5...v2.38.6
+
 ## [2.38.5] - 2026-09-22
 
 ## What's Changed
