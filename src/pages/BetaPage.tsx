@@ -2,8 +2,6 @@ import { useState } from 'react'
 import Footer from '../components/Footer'
 import '../index.css'
 
-const GITHUB = 'm4tuna/fibertuner'
-
 export default function BetaPage() {
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -239,7 +237,7 @@ export default function BetaPage() {
         </div>
       </main>
 
-      <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      <Footer appName="Fibertuner" />
     </div>
   )
 }

@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import Footer from './components/Footer'
 import './styles/downloads.css'
 
-const GITHUB = 'm4tuna/fibertuner-site'
-
 interface InviteInfo {
   username: string
   serverName: string
@@ -142,15 +140,7 @@ export default function DownloadsPage() {
           )}
           {error && (
             <p className="downloads__error">
-              Could not load release info.{' '}
-              <a
-                href={`https://github.com/${GITHUB}/releases`}
-                target="_blank"
-                rel="noopener"
-                className="downloads__error-link"
-              >
-                Check GitHub Releases ↗
-              </a>
+              Could not load release info.
             </p>
           )}
 
@@ -228,7 +218,7 @@ export default function DownloadsPage() {
         </div>
       </div>
 
-      <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      <Footer appName="Fibertuner" />
     </div>
   )
 }

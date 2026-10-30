@@ -4,8 +4,6 @@ import { supabase } from '../lib/supabase'
 import { fetchAlbumArt } from '../lib/albumArt'
 import '../styles/app.css'
 
-const GITHUB = 'm4tuna/fibertuner-site'
-
 interface SharerInfo {
   username: string
   serverName: string
@@ -121,7 +119,7 @@ export default function SharePage() {
         </div>
       </div>
 
-      <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      <Footer appName="Fibertuner" />
     </div>
   )
 }

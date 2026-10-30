@@ -8,7 +8,6 @@ const MAC_SCREENSHOTS = [
 
 const SHOW_IOS = false
 
-const GITHUB = 'm4tuna/fibertuner'
 const APP_STORE_URL = 'https://apps.apple.com/app/fibertuner/id0000000000'
 
 const FEATURES: { title: string; desc: string; mac: boolean; ios: boolean }[] = [
@@ -360,7 +359,7 @@ export default function App() {
 
       <div className="page-spacer" />
 
-      <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      <Footer appName="Fibertuner" />
     </div>
   )
 }

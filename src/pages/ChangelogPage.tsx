@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import Footer from '../components/Footer'
 import '../styles/changelog.css'
 
-const GITHUB = 'm4tuna/fibertuner-site'
-
 interface ChangelogEntry {
   version: string
   date: string
@@ -204,15 +202,7 @@ export default function ChangelogPage() {
 
           {error && (
             <div className="changelog-error">
-              Could not load changelog.{' '}
-              <a
-                href="https://github.com/m4tuna/fibertuner/releases"
-                target="_blank"
-                rel="noopener"
-                className="changelog-error-link"
-              >
-                See GitHub Releases ↗
-              </a>
+              Could not load changelog.
             </div>
           )}
 
@@ -240,7 +230,7 @@ export default function ChangelogPage() {
         </div>
       </div>
 
-      <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      <Footer appName="Fibertuner" />
     </div>
   )
 }
