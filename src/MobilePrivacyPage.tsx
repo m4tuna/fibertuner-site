@@ -1,7 +1,5 @@
 import Footer from './components/Footer'
 
-const GITHUB = 'm4tuna/fibertuner'
-
 const SECTIONS = [
   {
     title: 'Overview',
@@ -59,7 +57,7 @@ export default function MobilePrivacyPage() {
         </div>
       </div>
 
-      <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      <Footer appName="Fibertuner" />
     </div>
   )
 }

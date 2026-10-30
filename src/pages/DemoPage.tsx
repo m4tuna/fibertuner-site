@@ -1,7 +1,6 @@
 import Footer from '../components/Footer'
 import '../index.css'
 
-const GITHUB = 'm4tuna/fibertuner'
 const VIDEO_URL = 'https://rfvcpnnbqihfwatrxhib.supabase.co/storage/v1/object/public/demo/fibertuner-demo.mp4'
 
 export default function DemoPage() {
@@ -89,7 +88,7 @@ export default function DemoPage() {
         </div>
       </main>
 
-      <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      <Footer appName="Fibertuner" />
     </div>
   )
 }

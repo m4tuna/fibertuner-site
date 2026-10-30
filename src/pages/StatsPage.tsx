@@ -4,7 +4,6 @@ import StatsPanel from '../components/StatsPanel'
 import '../styles/stats-panel.css'
 import '../styles/downloads.css'
 
-const GITHUB = 'm4tuna/fibertuner-site'
 const SESSION_KEY = 'stats_auth'
 const REQUIRED_PASSWORD = import.meta.env.VITE_STATS_PASSWORD as string | undefined
 
@@ -48,7 +47,7 @@ export default function StatsPage() {
           <a href="/downloads" className="site-header__link">Downloads</a>
         </header>
         <div className="downloads__stats-body" />
-        <Footer appName="Fibertuner" githubRepo={GITHUB} />
+        <Footer appName="Fibertuner" />
       </div>
     )
   }
@@ -86,7 +85,7 @@ export default function StatsPage() {
             </form>
           </div>
         </div>
-        <Footer appName="Fibertuner" githubRepo={GITHUB} />
+        <Footer appName="Fibertuner" />
       </div>
     )
   }
@@ -101,7 +100,7 @@ export default function StatsPage() {
       <div className="downloads__stats-body">
         <StatsPanel />
       </div>
-      <Footer appName="Fibertuner" githubRepo={GITHUB} />
+      <Footer appName="Fibertuner" />
     </div>
   )
 }

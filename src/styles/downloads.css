@@ -63,10 +63,6 @@
   margin-bottom: 48px;
 }
 
-.downloads__error-link {
-  color: var(--accent);
-}
-
 /* ── Admin stats wrapper ─────────────────────────────────── */
 .downloads__stats-body { flex: 1; }
 
