@@ -2,6 +2,39 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.39.0] - 2026-10-30
+
+## What's Changed
+* feat: september batch — album playback, dynamic accent, hide list, lyrics thumbs by @m4tuna in https://github.com/m4tuna/fibertuner/pull/167
+* fix: Sonos zone state sync — transport targets active zone, resolve phantom playback by @m4tuna in https://github.com/m4tuna/fibertuner/pull/168
+* fix: force-switch Sonos out of TV/HDMI mode before sending play queue by @m4tuna in https://github.com/m4tuna/fibertuner/pull/158
+* fix: scale NowPlayingFullscreen for 16:9 laptop displays by @m4tuna in https://github.com/m4tuna/fibertuner/pull/157
+* fix: desktop side of mobile sync — accept external ratings + always show thumbs by @m4tuna in https://github.com/m4tuna/fibertuner/pull/155
+* feat: library analysis — server stats + find missing discovery panel by @m4tuna in https://github.com/m4tuna/fibertuner/pull/141
+* feat: Power Hour game mode + nav restructure by @m4tuna in https://github.com/m4tuna/fibertuner/pull/111
+* ui: collapse album actions into kebab dropdown by @m4tuna in https://github.com/m4tuna/fibertuner/pull/174
+* feat: clickable timeline on fullscreen lyrics view by @m4tuna in https://github.com/m4tuna/fibertuner/pull/175
+* ui: inline remove button on playlist row by @m4tuna in https://github.com/m4tuna/fibertuner/pull/176
+* feat: drag-and-drop reorder for queue, playlist, radio by @m4tuna in https://github.com/m4tuna/fibertuner/pull/177
+* ui: kebab menu on fullscreen lyrics now-playing box by @m4tuna in https://github.com/m4tuna/fibertuner/pull/178
+* fix: optimistic insert on add-to-playlist from dropdown by @m4tuna in https://github.com/m4tuna/fibertuner/pull/179
+* feat: drag queue tracks into playlists and radios by @m4tuna in https://github.com/m4tuna/fibertuner/pull/180
+* fix: harden plex movePlaylistItem against reorder timeouts by @m4tuna in https://github.com/m4tuna/fibertuner/pull/181
+* ui: queue drawer on fullscreen lyrics view by @m4tuna in https://github.com/m4tuna/fibertuner/pull/182
+* fix: surface underlying error in PlaylistView load failure by @m4tuna in https://github.com/m4tuna/fibertuner/pull/183
+* fix: scope TV-audio restriction to the TV-playing zone only by @m4tuna in https://github.com/m4tuna/fibertuner/pull/184
+* ui: hide Power Hour guessing mode toggle by @m4tuna in https://github.com/m4tuna/fibertuner/pull/185
+* ui: Power Hour exit confirm + larger close hit target by @m4tuna in https://github.com/m4tuna/fibertuner/pull/186
+* ui: enlarge Power Hour running widget for readability by @m4tuna in https://github.com/m4tuna/fibertuner/pull/187
+* fix: artist album advance fires regardless of start position by @m4tuna in https://github.com/m4tuna/fibertuner/pull/188
+* fix: dynamic accent color changes per song by @m4tuna in https://github.com/m4tuna/fibertuner/pull/189
+* fix: dynamic accent re-fires on toggle + verbose logging by @m4tuna in https://github.com/m4tuna/fibertuner/pull/190
+* fix: dynamic accent extraction + a11y (round 3) by @m4tuna in https://github.com/m4tuna/fibertuner/pull/191
+* rc: October 2026 RC — batched merges for QA by @m4tuna in https://github.com/m4tuna/fibertuner/pull/173
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.38.6...v2.39.0
+
 ## [2.38.6] - 2026-10-22
 
 ## What's Changed
