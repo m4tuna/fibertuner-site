@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.40.0] - 2026-11-03
+
+## What's Changed
+* feat: exclude live tracks from radio by default (new setting) by @m4tuna in https://github.com/m4tuna/fibertuner/pull/192
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.39.0...v2.40.0
+
 ## [2.39.0] - 2026-10-30
 
 ## What's Changed
