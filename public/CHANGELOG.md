@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.41.0] - 2026-11-06
+
+## What's Changed
+* rc: v2.41.0 feature build — radio fixes + playback hardening + queue-replace confirm modal by @m4tuna in https://github.com/m4tuna/fibertuner/pull/195
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.40.0...v2.41.0
+
 ## [2.40.0] - 2026-11-03
 
 ## What's Changed
