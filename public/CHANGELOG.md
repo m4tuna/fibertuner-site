@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.41.1] - 2026-11-09
+
+## What's Changed
+* fix: playlist artwork in carousels and detail page by @m4tuna in https://github.com/m4tuna/fibertuner/pull/201
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.41.0...v2.41.1
+
 ## [2.41.0] - 2026-11-06
 
 ## What's Changed
