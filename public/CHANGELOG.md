@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.42.1] - 2026-11-10
+
+## What's Changed
+* fix: bundle #203 disk cache LRU + #204 no-external-takeover + active-group intent by @m4tuna in https://github.com/m4tuna/fibertuner/pull/205
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.42.0...v2.42.1
+
 ## [2.42.0] - 2026-11-10
 
 ## What's Changed
