@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.42.0] - 2026-11-10
+
+## What's Changed
+* feat: condensed-nav tooltips + scrollable home header + playlist AI extend + 3-state loop toggle by @m4tuna in https://github.com/m4tuna/fibertuner/pull/202
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.41.1...v2.42.0
+
 ## [2.41.1] - 2026-11-09
 
 ## What's Changed
