@@ -2,6 +2,14 @@
 
 All notable changes to Fibertuner are documented here.
 
+## [2.44.0] - 2026-11-25
+
+## What's Changed
+* rc/2026-11-23: lyrics speakers btn, Get Info menu, radio → home consolidation by @m4tuna in https://github.com/m4tuna/fibertuner/pull/207
+
+
+**Full Changelog**: https://github.com/m4tuna/fibertuner/compare/v2.42.1...v2.44.0
+
 ## [2.42.1] - 2026-11-10
 
 ## What's Changed
